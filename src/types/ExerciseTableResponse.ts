@@ -27,9 +27,24 @@ interface IExerciseTableResponse {
   columns: IExerciseColumnResponse[]
   rows: IExerciseRowResponse[]
   primaryColumnId: number
+  totalRowCount: number
+}
+
+interface ApiResponse<T> {
+  status: number | string | undefined
+  code: string
+  message: string
+  result: T
+}
+interface IExercisePagePayload {
+  pageIndex: number // Example pagination data
+  pageSize: number // Example pagination data
+  searchName: string
 }
 
 export type {
+  IExercisePagePayload,
+  ApiResponse,
   IExerciseColumnResponse,
   IExerciseRowResponse,
   IExerciseTableResponse,

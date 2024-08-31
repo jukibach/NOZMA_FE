@@ -1,43 +1,61 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import {
-  IExercisePagePayload,
-  getPagingExercise,
-} from '../../services/exercise-service'
+import { useGetPagingExercise } from '../../services/exercise-service'
 import {
   IExerciseRowResponse,
   IExerciseTableResponse,
 } from '../../types/ExerciseTableResponse'
 import {
-  Anchor,
+  ActionIcon,
   AppShell,
-  Burger,
-  Header,
+  Box,
+  Button,
   List,
-  MediaQuery,
+  Title,
+  Tooltip,
   useMantineTheme,
 } from '@mantine/core'
 import {
   MRT_ColumnDef,
+  MRT_PaginationState,
   MantineReactTable,
   useMantineReactTable,
 } from 'mantine-react-table'
 import HeaderMenu from '../../common/HeaderMenu'
 import { CommonNavBar } from '../../common/CommonNavBar'
+import { IconRefresh } from '@tabler/icons-react'
 
 const ExerciseTables: React.FC = () => {
   const [exercises, setExercises] = useState<IExerciseTableResponse>()
   const theme = useMantineTheme()
   const [opened, setOpened] = useState(false)
-  useEffect(() => {
-    const pagePayload: IExercisePagePayload = {
-      pageSize: 20,
-      pageIndex: 0,
-    }
-    getPagingExercise(pagePayload).then((response) => {
-      setExercises(response.data.result)
-    })
-  }, [])
+  const [searchName, setSearchName] = useState(undefined)
+  const [isLoading, setIsLoading] = useState(true)
+  const [pagination, setPagination] = useState<MRT_PaginationState>({
+    pageIndex: 0,
+    pageSize: 20,
+  })
+  const [rowCount, setRowCount] = useState(0)
+  const getPagingExercise = useGetPagingExercise()
 
+  useEffect(() => {
+    if (searchName) {
+      pagination.pageIndex = 0
+    }
+    const dataToSend = {
+      pageIndex: pagination.pageIndex, // Example pagination data
+      pageSize: pagination.pageSize, // Example pagination data
+      searchName: searchName,
+    }
+    setIsLoading(true)
+    // Trigger the mutation on page load
+    getPagingExercise.mutate(dataToSend, {
+      onSuccess(data) {
+        setIsLoading(false)
+        setExercises(data.data.result)
+        setRowCount(data.data.result.totalRowCount)
+      },
+    })
+  }, [pagination, searchName])
   // const table = useMantineReactTable({
   //   columns,
   //   data, //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
@@ -144,11 +162,11 @@ const ExerciseTables: React.FC = () => {
   // })
 
   const columnSetup = exercises?.columns.map((column) => {
+    let result: MRT_ColumnDef<IExerciseRowResponse> = null
     if (column.type === 'multiSelect') {
-      return {
-        id: column.code, //id is still required when using accessorFn instead of accessorKey
+      result = {
+        accessorKey: column.code, //id is still required when using accessorFn instead of accessorKey
         header: column.name,
-        size: 200,
         accessorFn: (row: IExerciseRowResponse) => (
           <List>
             {(row[column.code] as string[])?.map((name, index) => (
@@ -157,11 +175,13 @@ const ExerciseTables: React.FC = () => {
           </List>
         ),
       }
+    } else {
+      result = {
+        accessorKey: column.code,
+        header: column.name,
+      }
     }
-    return {
-      accessorKey: column.code,
-      header: column.name,
-    }
+    return result
   })
 
   const columns = useMemo<MRT_ColumnDef<IExerciseRowResponse>[]>(
@@ -171,6 +191,69 @@ const ExerciseTables: React.FC = () => {
   const table = useMantineReactTable({
     columns,
     data: exercises?.rows || [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
+    // enableColumnFilterModes: true,
+    // columnFilterModeOptions: ['contains', 'startsWith', 'endsWith'],
+    onGlobalFilterChange: setSearchName,
+    onPaginationChange: setPagination,
+    defaultColumn: {
+      maxSize: 400,
+      size: 220, //default size is usually 180
+      mantineTableBodyCellProps: {
+        align: 'center',
+      },
+      mantineTableHeadCellProps: {
+        align: 'center',
+      },
+    },
+    // autoResetPageIndex: areRowsChanged,
+    initialState: {
+      columnPinning: {
+        // left: ['name'],
+        left: ['name'],
+      },
+    },
+    // initialState={ columnPinning: { left: ['state'], right: ['city'] } },
+    positionPagination: 'top',
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    rowCount: rowCount,
+    enableStickyHeader: true,
+    enableColumnResizing: true,
+    enableColumnPinning: true,
+    enableBottomToolbar: false,
+    editDisplayMode: 'row',
+    mantineTableProps: {
+      withColumnBorders: true,
+    },
+    renderTopToolbarCustomActions: ({ table }) => (
+      <Box
+        sx={{
+          display: 'flex',
+          padding: '8px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Button>Create New User</Button>
+      </Box>
+    ),
+    // renderTopToolbarCustomActions: () => (
+    //   <Tooltip label='Refresh Data'>
+    //     <ActionIcon onClick={() => refetch()}>
+    //       <IconRefresh />
+    //     </ActionIcon>
+    //   </Tooltip>
+    // ),
+    // paginationDisplayMode: 'pages',
+    state: {
+      isLoading,
+      pagination,
+      globalFilter: searchName,
+      // showAlertBanner: isError,
+      // showLoadingOverlay: isLoading, //fetching next page pagination
+      // showSkeletons: isLoading, //loading for the first time with no data
+      showProgressBars: getPagingExercise.isPending,
+    },
   })
 
   return (
