@@ -1,38 +1,45 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React from 'react'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
-import { Formik, Field, Form, ErrorMessage } from 'formik'
 import * as Yup from 'yup'
-import { login } from '../../services/auth-service'
-import { REACT_APP_BE_BASE_URL } from '../../constants/constant'
-import { AppShell, useMantineTheme } from '@mantine/core'
 import {
-  MantineReactTable,
-  type MRT_ColumnDef,
-  MRT_GlobalFilterTextInput,
-  MRT_ToggleFiltersButton,
-} from 'mantine-react-table'
-import { IExerciseRowResponse } from '../../types/ExerciseTableResponse'
+  Anchor,
+  Box,
+  Button,
+  Container,
+  Group,
+  MantineTheme,
+  Paper,
+  PasswordInput,
+  Text,
+  TextInput,
+  Title,
+  useMantineTheme,
+} from '@mantine/core'
+import { useForm, yupResolver } from '@mantine/form'
+import { notifications } from '@mantine/notifications'
+import CommonTemplate from '../../common/CommonTemplate'
+import { login } from '../../services/auth-service'
+import { ApiResponse } from '../../types/ExerciseTableResponse'
+import ILoginResponse from '../../types/LoginResponse'
 
 type Props = {}
 
 const Login: React.FC<Props> = () => {
   let navigate: NavigateFunction = useNavigate()
-
-  const [loading, setLoading] = useState<boolean>(false)
-  const [message, setMessage] = useState<string>('')
   const theme = useMantineTheme()
-
-  const initialValues: {
-    accountName: string
-    password: string
-  } = {
-    accountName: '',
-    password: '',
-  }
 
   const validationSchema = Yup.object().shape({
     accountName: Yup.string().required('This field is required!'),
     password: Yup.string().required('This field is required!'),
+  })
+
+  const form = useForm({
+    validateInputOnChange: true,
+    initialValues: {
+      accountName: '',
+      password: '',
+    },
+    validate: yupResolver(validationSchema),
   })
 
   const handleLogin = (formValue: {
@@ -41,114 +48,114 @@ const Login: React.FC<Props> = () => {
   }) => {
     const { accountName, password } = formValue
 
-    setMessage('')
-    setLoading(true)
-
     login(accountName, password).then(
-      () => {
-        console.log(REACT_APP_BE_BASE_URL)
-
-        navigate('/exercises')
-        window.location.reload()
+      (res: ApiResponse<ILoginResponse>) => {
+        if (res) {
+          navigate('/exercises', { state: { showSuccessNotification: true } })
+        }
       },
       (error) => {
-        const resMessage =
-          (error.response &&
-            error.response.data &&
-            error.response.data.message) ||
-          error.message ||
-          error.toString()
-
-        setLoading(false)
-        setMessage(resMessage)
+        handleErrorMessage(error, theme)
       }
     )
   }
+  const handleErrorMessage = (error: any, theme: MantineTheme) => {
+    const resMessage =
+      (error.response && error.response.data && error.response.data.message) ||
+      error.message ||
+      error.toString()
+    notifications.show({
+      title: error.response.data.status === 'BAD_REQUEST' ? 'Bad request' : '',
+      message: resMessage,
+      color: 'red',
+      autoClose: 2500,
+      radius: theme.radius.md,
+      styles: (theme) => ({
+        root: {
+          fontWeight: 600,
+          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
+        },
+        title: {
+          color: theme.colors.red[6],
+          fontWeight: 600,
+          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
+        },
+      }),
+      sx: { backgroundColor: theme.black, color: 'red' },
+    })
+  }
+  const navigateToRegisterPage = () => {
+    navigate('/register')
+  }
 
   return (
-    <AppShell
-      styles={{
-        main: {
-          background:
-            theme.colorScheme === 'dark'
-              ? theme.colors.dark[8]
-              : theme.colors.gray[0],
-        },
-      }}
-      navbarOffsetBreakpoint='sm'
-      asideOffsetBreakpoint='sm'
-      // navbar={<NavbarSimpleColored />}
-    >
-      <div className='col-md-12'>
-        <div className='card card-container'>
-          <img
-            src='//ssl.gstatic.com/accounts/ui/avatar_2x.png'
-            alt='profile-img'
-            className='profile-img-card'
-          />
-          <Formik
-            initialValues={initialValues}
-            validationSchema={validationSchema}
-            onSubmit={handleLogin}
-          >
-            <Form>
-              <div className='form-group'>
-                <label htmlFor='accountName'>Account Name</label>
-                <Field
-                  name='accountName'
-                  type='text'
-                  className='form-control'
-                />
-                <ErrorMessage
-                  name='accountName'
-                  component='div'
-                  className='alert alert-danger'
-                />
-              </div>
-
-              <div className='form-group'>
-                <label htmlFor='password'>Password</label>
-                <Field
-                  name='password'
-                  type='password'
-                  className='form-control'
-                />
-                <ErrorMessage
-                  name='password'
-                  component='div'
-                  className='alert alert-danger'
-                />
-              </div>
-
-              <div className='form-group'>
-                <button
-                  type='submit'
-                  className='btn btn-primary btn-block'
-                  disabled={loading}
+    <CommonTemplate>
+      <Container size={500}>
+        <Paper withBorder shadow='md' p={30} mt={50} radius={10}>
+          <Box maw={340} mx='auto'>
+            <form onSubmit={form.onSubmit(handleLogin)}>
+              <Title
+                align='center'
+                sx={(theme) => ({
+                  fontFamily: `Greycliff CF, ${theme.fontFamily}`,
+                  fontWeight: 900,
+                })}
+              >
+                Sign in
+              </Title>
+              <TextInput
+                withAsterisk
+                label='Account name'
+                placeholder='Enter your account name'
+                {...form.getInputProps('accountName')}
+                required
+              />
+              <PasswordInput
+                label='Password'
+                mt={theme.spacing.md}
+                withAsterisk
+                placeholder='Enter your password'
+                {...form.getInputProps('password')}
+                required
+              />
+              <Group mt={theme.spacing.md}>
+                <Anchor<'a'>
+                  onClick={(event) => event.preventDefault()}
+                  href='#'
+                  size={theme.fontSizes.sm}
                 >
-                  {loading && (
-                    <span className='spinner-border spinner-border-sm'></span>
-                  )}
-                  <span>Login</span>
-                </button>
-              </div>
-
-              {message && (
-                <div className='form-group'>
-                  <div className='alert alert-danger' role='alert'>
-                    {message}
-                  </div>
-                </div>
-              )}
-            </Form>
-          </Formik>
-        </div>
-      </div>
-    </AppShell>
+                  Forgot password?
+                </Anchor>
+              </Group>
+              <Button
+                type='submit'
+                mt={theme.spacing.md}
+                fullWidth
+                mb={theme.spacing.sm}
+              >
+                Submit
+              </Button>
+              <Text
+                size={theme.fontSizes.md}
+                align='center'
+                mt={5}
+                color='dimmed'
+              >
+                Do not have an account yet?{' '}
+                <Anchor<'a'>
+                  href='#'
+                  size={theme.fontSizes.sm}
+                  onClick={navigateToRegisterPage}
+                >
+                  Create account
+                </Anchor>
+              </Text>
+            </form>
+          </Box>
+        </Paper>
+      </Container>
+    </CommonTemplate>
   )
 }
 
 export default Login
-function useMantineReactTable(arg0: {}) {
-  throw new Error('Function not implemented.')
-}

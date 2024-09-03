@@ -1,61 +1,98 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useGetPagingExercise } from '../../services/exercise-service'
 import {
+  useGetPagingExercise,
+  useGetPagingExerciseForGuest,
+} from '../../services/exercise-service'
+import {
+  IExercisePagePayload,
   IExerciseRowResponse,
   IExerciseTableResponse,
 } from '../../types/ExerciseTableResponse'
-import {
-  ActionIcon,
-  AppShell,
-  Box,
-  Button,
-  List,
-  Title,
-  Tooltip,
-  useMantineTheme,
-} from '@mantine/core'
+import { Button, Flex, List, useMantineTheme } from '@mantine/core'
 import {
   MRT_ColumnDef,
   MRT_PaginationState,
   MantineReactTable,
   useMantineReactTable,
 } from 'mantine-react-table'
-import HeaderMenu from '../../common/HeaderMenu'
-import { CommonNavBar } from '../../common/CommonNavBar'
-import { IconRefresh } from '@tabler/icons-react'
+import ILoginResponse from '../../types/LoginResponse'
+import { getCurrentUser } from '../../services/auth-service'
+import { useLocation, useNavigate } from 'react-router'
+import { notifications } from '@mantine/notifications'
+import CommonTemplate from '../../common/CommonTemplate'
+import { useAuth } from '../../contexts/AuthContext'
 
 const ExerciseTables: React.FC = () => {
   const [exercises, setExercises] = useState<IExerciseTableResponse>()
   const theme = useMantineTheme()
-  const [opened, setOpened] = useState(false)
   const [searchName, setSearchName] = useState(undefined)
   const [isLoading, setIsLoading] = useState(true)
+  const [rowCount, setRowCount] = useState(0)
+  const getPagingExercise = useGetPagingExercise()
+  const getPagingExerciseForGuest = useGetPagingExerciseForGuest()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [pagination, setPagination] = useState<MRT_PaginationState>({
     pageIndex: 0,
     pageSize: 20,
   })
-  const [rowCount, setRowCount] = useState(0)
-  const getPagingExercise = useGetPagingExercise()
+  const userStr = getCurrentUser()
 
   useEffect(() => {
     if (searchName) {
       pagination.pageIndex = 0
     }
-    const dataToSend = {
-      pageIndex: pagination.pageIndex, // Example pagination data
-      pageSize: pagination.pageSize, // Example pagination data
+    const dataToSend: IExercisePagePayload = {
+      pageIndex: pagination.pageIndex,
+      pageSize: pagination.pageSize,
       searchName: searchName,
     }
     setIsLoading(true)
-    // Trigger the mutation on page load
-    getPagingExercise.mutate(dataToSend, {
-      onSuccess(data) {
-        setIsLoading(false)
-        setExercises(data.data.result)
-        setRowCount(data.data.result.totalRowCount)
-      },
-    })
+
+    if (userStr) {
+      // Trigger the mutation on page load
+      getPagingExercise.mutate(dataToSend, {
+        onSuccess(data) {
+          setIsLoading(false)
+          setExercises(data.data.result)
+          setRowCount(data.data.result.totalRowCount)
+        },
+      })
+    } else {
+      getPagingExerciseForGuest.mutate(dataToSend, {
+        onSuccess(data) {
+          setIsLoading(false)
+          setExercises(data.data.result)
+          setRowCount(data.data.result.totalRowCount)
+        },
+      })
+    }
   }, [pagination, searchName])
+
+  //Display successful notification after a successful login
+  useEffect(() => {
+    if (location?.state?.showSuccessNotification) {
+      notifications.show({
+        title: 'Successful',
+        message: 'Login success',
+        color: 'green',
+        radius: theme.radius.md,
+        styles: (theme) => ({
+          root: {
+            fontWeight: 600,
+            fontFamily: `Greycliff CF, ${theme.fontFamily}`,
+          },
+          title: {
+            color: theme.colors.green[6],
+            fontWeight: 600,
+            fontFamily: `Greycliff CF, ${theme.fontFamily}`,
+          },
+        }),
+        sx: { backgroundColor: theme.black, color: 'green' },
+      })
+      navigate('.', { replace: true, state: {} })
+    }
+  }, [location.state, navigate])
   // const table = useMantineReactTable({
   //   columns,
   //   data, //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
@@ -162,11 +199,13 @@ const ExerciseTables: React.FC = () => {
   // })
 
   const columnSetup = exercises?.columns.map((column) => {
-    let result: MRT_ColumnDef<IExerciseRowResponse> = null
+    let result: MRT_ColumnDef<IExerciseRowResponse> = {
+      accessorKey: column.code,
+      header: column.name,
+    }
     if (column.type === 'multiSelect') {
       result = {
-        accessorKey: column.code, //id is still required when using accessorFn instead of accessorKey
-        header: column.name,
+        ...result,
         accessorFn: (row: IExerciseRowResponse) => (
           <List>
             {(row[column.code] as string[])?.map((name, index) => (
@@ -175,14 +214,21 @@ const ExerciseTables: React.FC = () => {
           </List>
         ),
       }
-    } else {
-      result = {
-        accessorKey: column.code,
-        header: column.name,
-      }
     }
     return result
   })
+
+  const renderTopToolbarCustomAction = userStr
+    ? ({}) => (
+        <Flex p='md' justify='space-between'>
+          <Flex sx={{ gap: '8px' }}>
+            <Button variant='filled' color='green'>
+              Create New User
+            </Button>
+          </Flex>
+        </Flex>
+      )
+    : undefined
 
   const columns = useMemo<MRT_ColumnDef<IExerciseRowResponse>[]>(
     () => columnSetup || [],
@@ -190,11 +236,12 @@ const ExerciseTables: React.FC = () => {
   )
   const table = useMantineReactTable({
     columns,
-    data: exercises?.rows || [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
+    data: exercises?.rows ?? [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
     // enableColumnFilterModes: true,
     // columnFilterModeOptions: ['contains', 'startsWith', 'endsWith'],
     onGlobalFilterChange: setSearchName,
     onPaginationChange: setPagination,
+    mantineTableContainerProps: { sx: { maxHeight: '650px' } },
     defaultColumn: {
       maxSize: 400,
       size: 220, //default size is usually 180
@@ -211,9 +258,9 @@ const ExerciseTables: React.FC = () => {
         // left: ['name'],
         left: ['name'],
       },
+      isLoading: isLoading,
     },
-    // initialState={ columnPinning: { left: ['state'], right: ['city'] } },
-    positionPagination: 'top',
+    // positionPagination: 'top',
     manualFiltering: true,
     manualPagination: true,
     manualSorting: true,
@@ -221,68 +268,34 @@ const ExerciseTables: React.FC = () => {
     enableStickyHeader: true,
     enableColumnResizing: true,
     enableColumnPinning: true,
-    enableBottomToolbar: false,
+    // enableBottomToolbar: false,
     editDisplayMode: 'row',
     mantineTableProps: {
       withColumnBorders: true,
     },
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Box
-        sx={{
-          display: 'flex',
-          padding: '8px',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Button>Create New User</Button>
-      </Box>
-    ),
-    // renderTopToolbarCustomActions: () => (
-    //   <Tooltip label='Refresh Data'>
-    //     <ActionIcon onClick={() => refetch()}>
-    //       <IconRefresh />
-    //     </ActionIcon>
-    //   </Tooltip>
-    // ),
-    // paginationDisplayMode: 'pages',
+    renderTopToolbarCustomActions: renderTopToolbarCustomAction,
     state: {
-      isLoading,
+      isLoading: isLoading,
       pagination,
       globalFilter: searchName,
       // showAlertBanner: isError,
-      // showLoadingOverlay: isLoading, //fetching next page pagination
-      // showSkeletons: isLoading, //loading for the first time with no data
-      showProgressBars: getPagingExercise.isPending,
+      showLoadingOverlay: isLoading, //fetching next page pagination
+      showSkeletons: isLoading, //loading for the first time with no data
+      showProgressBars: isLoading,
     },
+    mantineProgressProps: ({ isTopToolbar }) => ({
+      color: 'orange',
+      variant: 'determinate', //if you want to show exact progress value
+      style: {
+        display: isTopToolbar ? 'block' : 'none', //hide bottom progress bar
+      },
+    }),
   })
 
   return (
-    <AppShell
-      padding='xl'
-      styles={{
-        main: {
-          background:
-            theme.colorScheme === 'dark'
-              ? theme.colors.dark[8]
-              : theme.colors.gray[0],
-        },
-      }}
-      navbar={opened ? <CommonNavBar /> : undefined}
-      header={
-        <HeaderMenu opened={opened} onClick={() => setOpened((o) => !o)} />
-      }
-    >
-      {/* <Center>
-        <Table highlightOnHover withColumnBorders>
-          <ExerciseColumn columns={exercises?.columns} />
-          <ExerciseRow
-            columns={exercises?.columns}
-            rows={exercises?.rows}
-          ></ExerciseRow>
-        </Table>
-      </Center> */}
+    <CommonTemplate>
       <MantineReactTable table={table} />
-    </AppShell>
+    </CommonTemplate>
   )
 }
 

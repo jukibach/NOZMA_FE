@@ -1,12 +1,18 @@
 import {
   Burger,
+  Button,
+  Flex,
+  Group,
   Header,
   MediaQuery,
   Text,
   createStyles,
-  rem,
 } from '@mantine/core'
-import classes from './HeaderMenu.module.css'
+import ILoginResponse from '../types/LoginResponse'
+import { NavigateFunction, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { debug } from 'console'
+import { getCurrentUser } from '../services/auth-service'
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -20,9 +26,49 @@ interface Props {
   onClick: () => void
 }
 export default function HeaderMenu({ opened, onClick }: Props) {
+  const navigate: NavigateFunction = useNavigate()
+  const userStr = getCurrentUser()
+
+  const displayBurger = () => {
+    return (
+      <MediaQuery
+        styles={{
+          display: 'none', // current user
+        }}
+      >
+        <Burger opened={opened} onClick={onClick} mr='xl' />
+      </MediaQuery>
+    )
+  }
+
+  const navigateToSignInPage = () => {
+    navigate('/login')
+  }
+
+  const displaySignInButton = () => {
+    if (!userStr) {
+      return (
+        <Button
+          variant='gradient'
+          gradient={{ from: 'teal', to: 'lime', deg: 105 }}
+          uppercase
+          radius='lg'
+          size='lg'
+          p='md'
+          onClick={navigateToSignInPage}
+        >
+          Sign in
+        </Button>
+      )
+    }
+  }
+  // if (auth?.token === undefined) {
+  //   return <div>Loading...</div> // Render a loading state if `currentUser` is not yet defined
+  // }
+
   return (
     <Header
-      height={{ base: 50, md: 70 }}
+      height={{ base: 70 }}
       p='md'
       withBorder={true}
       sx={(theme) => ({
@@ -37,12 +83,19 @@ export default function HeaderMenu({ opened, onClick }: Props) {
         },
       })}
     >
-      <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-        <MediaQuery styles={{ display: 'none' }}>
-          <Burger opened={opened} onClick={onClick} mr='xl' />
-        </MediaQuery>
-        <Text fw={700}>NOMZA</Text>
-      </div>
+      <Flex
+        style={{
+          height: '100%',
+        }}
+        align={'center'}
+        justify={'space-between'}
+      >
+        <Group>
+          {displayBurger()}
+          <Text fw={700}>NOMZA</Text>
+        </Group>
+        {displaySignInButton()}
+      </Flex>
     </Header>
   )
 }

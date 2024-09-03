@@ -39,7 +39,7 @@ interface ApiResponse<T> {
 interface IExercisePagePayload {
   pageIndex: number // Example pagination data
   pageSize: number // Example pagination data
-  searchName: string
+  searchName?: string
 }
 
 export type {

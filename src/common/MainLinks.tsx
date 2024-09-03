@@ -14,7 +14,7 @@ const data = [
   },
   {
     color: 'teal',
-    label: 'Exercises',
+    label: 'Exercisesssss',
     link: '/exercises',
   },
 ]

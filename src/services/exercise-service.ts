@@ -36,3 +36,18 @@ export function useGetPagingExercise() {
     },
   })
 }
+
+export function useGetPagingExerciseForGuest() {
+  return useMutation({
+    mutationFn: async (pagePayload: IExercisePagePayload) => {
+      const fetchUrl = new URL(
+        API_URLS.GET_EXERCISES_GUEST,
+        REACT_APP_BE_BASE_URL
+      )
+      return await axios.post<ApiResponse<IExerciseTableResponse>>(
+        fetchUrl.href,
+        pagePayload
+      )
+    },
+  })
+}
