@@ -7,7 +7,7 @@ export interface RegisterRequest {
   middleName: string
   lastName: string
   phoneNumber: string
-  birthDate: string
+  birthdate: string
 }
 
 export interface RegisterResponse {
@@ -15,13 +15,5 @@ export interface RegisterResponse {
   email: string
   profileToken: string
   refreshToken: string
-  roles: string
+  role: string
 }
-
-export interface AuthContextType {
-  token: any
-  loginAction: (accountName: string, password: string) => void
-  logOut: () => void
-}
-
-

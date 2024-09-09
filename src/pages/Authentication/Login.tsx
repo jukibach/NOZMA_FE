@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
 import * as Yup from 'yup'
 import {
@@ -7,7 +7,6 @@ import {
   Button,
   Container,
   Group,
-  MantineTheme,
   Paper,
   PasswordInput,
   Text,
@@ -16,18 +15,19 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { useForm, yupResolver } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
-import CommonTemplate from '../../common/CommonTemplate'
-import { login } from '../../services/auth-service'
-import { ApiResponse } from '../../types/ExerciseTableResponse'
-import ILoginResponse from '../../types/LoginResponse'
+import CommonTemplate from '@common/CommonTemplate'
+import { LoginRequest, LoginResponse } from '@interfaces/Authentication'
+import { NotificationContext } from '@contexts/NotificationContext'
+import { API_URLS } from '@constants/API_URLS'
+import { LocalAccount, LocalDataClass } from '@data-class/LocalDataClass'
+import { useCustomPostMutation } from '@query/useCustomMutation'
 
 type Props = {}
 
 const Login: React.FC<Props> = () => {
-  let navigate: NavigateFunction = useNavigate()
+  const navigate: NavigateFunction = useNavigate()
+  const { addMessage } = useContext(NotificationContext)!
   const theme = useMantineTheme()
-
   const validationSchema = Yup.object().shape({
     accountName: Yup.string().required('This field is required!'),
     password: Yup.string().required('This field is required!'),
@@ -38,52 +38,33 @@ const Login: React.FC<Props> = () => {
     initialValues: {
       accountName: '',
       password: '',
-    },
+    } as LoginRequest,
     validate: yupResolver(validationSchema),
   })
 
-  const handleLogin = (formValue: {
-    accountName: string
-    password: string
-  }) => {
-    const { accountName, password } = formValue
-
-    login(accountName, password).then(
-      (res: ApiResponse<ILoginResponse>) => {
-        if (res) {
-          navigate('/exercises', { state: { showSuccessNotification: true } })
+  const loginMutation = useCustomPostMutation<LoginRequest, LoginResponse>(
+    API_URLS.ACCOUNT_LOGIN,
+    {
+      isAlert: true,
+      onSuccess(result) {
+        if (result.data.status === 'OK') {
+          LocalDataClass.user = {
+            ...(result.data.result as LocalAccount),
+            authStatus: 'SUCCESS',
+          }
+          navigate('/', {
+            replace: true,
+          })
+          addMessage('Successful', result.data.message)
         }
       },
-      (error) => {
-        handleErrorMessage(error, theme)
-      }
-    )
+    }
+  )
+
+  const handleLogin = ({ ...formValue }: LoginRequest) => {
+    loginMutation.mutateAsync(formValue)
   }
-  const handleErrorMessage = (error: any, theme: MantineTheme) => {
-    const resMessage =
-      (error.response && error.response.data && error.response.data.message) ||
-      error.message ||
-      error.toString()
-    notifications.show({
-      title: error.response.data.status === 'BAD_REQUEST' ? 'Bad request' : '',
-      message: resMessage,
-      color: 'red',
-      autoClose: 2500,
-      radius: theme.radius.md,
-      styles: (theme) => ({
-        root: {
-          fontWeight: 600,
-          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-        },
-        title: {
-          color: theme.colors.red[6],
-          fontWeight: 600,
-          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-        },
-      }),
-      sx: { backgroundColor: theme.black, color: 'red' },
-    })
-  }
+
   const navigateToRegisterPage = () => {
     navigate('/register')
   }
@@ -100,6 +81,7 @@ const Login: React.FC<Props> = () => {
                   fontFamily: `Greycliff CF, ${theme.fontFamily}`,
                   fontWeight: 900,
                 })}
+                variant='gradient'
               >
                 Sign in
               </Title>
@@ -108,7 +90,6 @@ const Login: React.FC<Props> = () => {
                 label='Account name'
                 placeholder='Enter your account name'
                 {...form.getInputProps('accountName')}
-                required
               />
               <PasswordInput
                 label='Password'
@@ -116,7 +97,6 @@ const Login: React.FC<Props> = () => {
                 withAsterisk
                 placeholder='Enter your password'
                 {...form.getInputProps('password')}
-                required
               />
               <Group mt={theme.spacing.md}>
                 <Anchor<'a'>
@@ -132,6 +112,7 @@ const Login: React.FC<Props> = () => {
                 mt={theme.spacing.md}
                 fullWidth
                 mb={theme.spacing.sm}
+                variant='gradient'
               >
                 Submit
               </Button>

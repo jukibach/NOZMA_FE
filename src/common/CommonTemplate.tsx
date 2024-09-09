@@ -1,8 +1,6 @@
-import React, { ReactNode, useEffect, useState } from 'react'
+import React, { ReactNode, useState } from 'react'
 import { AppShell, useMantineTheme } from '@mantine/core'
 
-import { getCurrentUser } from '../services/auth-service'
-import ILoginResponse from '../types/LoginResponse'
 import { CommonNavBar } from './CommonNavBar'
 import HeaderMenu from './HeaderMenu'
 

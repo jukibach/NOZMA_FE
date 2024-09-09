@@ -1,59 +1,35 @@
 import axios from 'axios'
 import { API_URLS } from '../constants/API_URLS'
 import { REACT_APP_BE_BASE_URL } from '../constants/constant'
-import authHeader from './auth-header'
-import ILoginResponse from '../types/LoginResponse'
-import { RegisterRequest } from '../types/RegisterType'
+import { RegisterRequest, RegisterResponse } from '../interfaces/RegisterType'
+import { LocalAccount, LocalDataClass } from '../data-class/LocalDataClass'
+import { AppAxios } from '../utils/axios'
+import { LoginRequest, LoginResponse } from '../interfaces/Authentication'
+import { ApiResponse } from '../interfaces/ExerciseTableResponse'
 
-export const login = async (accountName: string, password: string) => {
-  const response = await axios.post(
-    REACT_APP_BE_BASE_URL + API_URLS.ACCOUNT_LOGIN,
-    {
-      accountName,
-      password,
-    }
-  )
-  if (response.data.result.profileToken) {
-    localStorage.setItem('user', JSON.stringify(response.data.result))
-  }
-  return response.data
-}
-
-export const logout = async (profileToken: string | null) => {
+export const logout = async () => {
+  const profileToken = LocalDataClass.user.profileToken
   if (!profileToken) throw new TypeError('Error message')
-  const response = await axios.post(
-    REACT_APP_BE_BASE_URL + API_URLS.ACCOUNT_LOGOUT,
-    {
-      profileToken,
-    },
-    {
-      headers: authHeader(),
-    }
-  )
-  if (response.data.code === 'OK') {
-    localStorage.removeItem('user')
-    window.location.reload()
-  }
-  return response.data
+  const response = await AppAxios().post(API_URLS.ACCOUNT_LOGOUT, {
+    profileToken,
+  })
+  return response.data as ApiResponse<null>
 }
 
-export const register = async (request: RegisterRequest) => {
+export const register = async ({ ...request }: RegisterRequest) => {
+  const { ...values } = request
+
   const response = await axios.post(
     REACT_APP_BE_BASE_URL + API_URLS.ACCOUNT_USER_REGISTER,
     {
-      request,
+      ...values,
     }
   )
   if (response.data.result.profileToken) {
-    localStorage.setItem('user', JSON.stringify(response.data.result))
-    window.location.reload()
+    LocalDataClass.user = {
+      ...(response.data.result as LocalAccount),
+      authStatus: 'FIRST_GENERATED_PASSWORD',
+    }
   }
-  return response.data
-}
-
-export const getCurrentUser = () => {
-  const userStr = localStorage.getItem('user')
-  if (userStr) return JSON.parse(userStr) as ILoginResponse
-
-  return null
+  return response.data as ApiResponse<RegisterResponse>
 }

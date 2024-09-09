@@ -1,13 +1,11 @@
-import React from 'react'
+import React, { useContext } from 'react'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
 import * as Yup from 'yup'
-import { register } from '../../services/auth-service'
 import {
   Anchor,
   Box,
   Button,
   Container,
-  MantineTheme,
   Paper,
   PasswordInput,
   Text,
@@ -16,19 +14,29 @@ import {
   useMantineTheme,
 } from '@mantine/core'
 import { useForm, yupResolver } from '@mantine/form'
-import { notifications } from '@mantine/notifications'
 import CommonTemplate from '../../common/CommonTemplate'
 import { DateInput } from '@mantine/dates'
-import { RegisterRequest } from '../../types/RegisterType'
-
+import {
+  RegisterRequest,
+  RegisterResponse,
+} from '../../interfaces/RegisterType'
+import dayjs from 'dayjs'
+import { LocalAccount, LocalDataClass } from '../../data-class/LocalDataClass'
+import { NotificationContext } from '../../contexts/NotificationContext'
+import { useCustomPostMutation } from '@query/useCustomMutation'
+import { API_URLS } from '@constants/API_URLS'
 type Props = {}
 
 const Register: React.FC<Props> = () => {
   let navigate: NavigateFunction = useNavigate()
-
+  const { addMessage } = useContext(NotificationContext)!
   const theme = useMantineTheme()
   const phoneRegExp =
     /^((\\+[1-9]{1,4}[ \\-]*)|(\\([0-9]{2,3}\\)[ \\-]*)|([0-9]{2,4})[ \\-]*)*?[0-9]{3,4}?[ \\-]*[0-9]{3,4}?$/
+
+  const parseDateString = (originalValue: any) => {
+    return dayjs(originalValue).format('DD/MM/YYYY')
+  }
 
   const validationSchema = Yup.object().shape({
     accountName: Yup.string().required('This field is required!'),
@@ -43,7 +51,8 @@ const Register: React.FC<Props> = () => {
     phoneNumber: Yup.string()
       .required('This field is required!')
       .matches(phoneRegExp, 'Invalid phone number')
-      .max(10, 'There are more than 10 digits'),
+      .max(11, 'There are more than 10 digits')
+      .min(10, 'There are more than 10 digits'),
     birthdate: Yup.string().required('This field is required!'),
   })
 
@@ -56,53 +65,38 @@ const Register: React.FC<Props> = () => {
     middleName: '',
     lastName: '',
     phoneNumber: '',
-    birthDate: '',
+    birthdate: '',
   }
   const form = useForm({
     validateInputOnChange: true,
     initialValues: init,
     validate: yupResolver(validationSchema),
+    transformValues: (values) => ({
+      ...values,
+      birthdate: parseDateString(values.birthdate),
+    }),
   })
 
-  const handleLogin = (values: RegisterRequest) => {
-    register(values).then(
-      () => {
-        navigate('/exercises', { state: { showSuccessNotification: true } })
-      },
-      (error) => {
-        handleErrorMessage(error, theme)
+  const registerMutation = useCustomPostMutation<
+    RegisterRequest,
+    RegisterResponse
+  >(API_URLS.ACCOUNT_USER_REGISTER, {
+    onSuccess(result) {
+      navigate('/login', {
+        replace: true,
+        state: {},
+      })
+      addMessage('Successful', result.data.message)
+    },
+  })
+
+  const handleRegister = ({ ...values }: RegisterRequest) => {
+    registerMutation.mutateAsync(values).then((result) => {
+      LocalDataClass.user = {
+        ...(result.data.result as LocalAccount),
+        authStatus: 'SUCCESS',
       }
-    )
-  }
-
-  const handleErrorMessage = (error: any, theme: MantineTheme) => {
-    const resMessage =
-      (error.response && error.response.data && error.response.data.message) ||
-      error.message ||
-      error.toString()
-    notifications.show({
-      title: error.response.data.status === 'BAD_REQUEST' ? 'Bad request' : '',
-      message: resMessage,
-      color: 'red',
-      autoClose: 2500,
-      radius: theme.radius.md,
-      styles: (theme) => ({
-        root: {
-          fontWeight: 600,
-          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-        },
-        title: {
-          color: theme.colors.red[6],
-          fontWeight: 600,
-          fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-        },
-      }),
-      sx: { backgroundColor: theme.black, color: 'red' },
     })
-  }
-
-  const navigateToSignInPage = () => {
-    navigate('/login')
   }
 
   return (
@@ -110,7 +104,7 @@ const Register: React.FC<Props> = () => {
       <Container size={500}>
         <Paper withBorder shadow='md' p={30} mt={50} radius={10}>
           <Box maw={340} mx='auto'>
-            <form onSubmit={form.onSubmit(handleLogin)}>
+            <form onSubmit={form.onSubmit(handleRegister)}>
               <Title
                 align='center'
                 sx={(theme) => ({
@@ -182,8 +176,8 @@ const Register: React.FC<Props> = () => {
                 required
               />
               <DateInput
-                valueFormat='YYYY MMMM DD'
-                label='Birth date'
+                valueFormat='DD/MM/YYYY'
+                label='Birth date (DD/MM/YYYY)'
                 placeholder='Enter your birth date'
                 maw={400}
                 mt={theme.spacing.md}
@@ -210,7 +204,7 @@ const Register: React.FC<Props> = () => {
                 <Anchor<'a'>
                   href='#'
                   size={theme.fontSizes.sm}
-                  onClick={navigateToSignInPage}
+                  onClick={() => navigate('/login')}
                 >
                   Sign in
                 </Anchor>

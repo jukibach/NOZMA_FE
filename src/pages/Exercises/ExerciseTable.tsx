@@ -1,300 +1,302 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import {
-  useGetPagingExercise,
-  useGetPagingExerciseForGuest,
-} from '../../services/exercise-service'
+  ExerciseColumnResponse,
+  ExercisePagePayload,
+  ExerciseRowResponse,
+  ExerciseTableResponse,
+} from '../../interfaces/ExerciseTableResponse'
 import {
-  IExercisePagePayload,
-  IExerciseRowResponse,
-  IExerciseTableResponse,
-} from '../../types/ExerciseTableResponse'
-import { Button, Flex, List, useMantineTheme } from '@mantine/core'
+  ActionIcon,
+  Button,
+  Divider,
+  Flex,
+  Group,
+  Highlight,
+  List,
+  LoadingOverlay,
+  Menu,
+  Pagination,
+  ScrollArea,
+  Select,
+  Skeleton,
+  Stack,
+  Switch,
+  Table,
+  Text,
+  Title,
+  Tooltip,
+} from '@mantine/core'
 import {
-  MRT_ColumnDef,
-  MRT_PaginationState,
-  MantineReactTable,
+  MRT_GlobalFilterTextInput,
+  MRT_ToolbarAlertBanner,
   useMantineReactTable,
 } from 'mantine-react-table'
-import ILoginResponse from '../../types/LoginResponse'
-import { getCurrentUser } from '../../services/auth-service'
-import { useLocation, useNavigate } from 'react-router'
-import { notifications } from '@mantine/notifications'
 import CommonTemplate from '../../common/CommonTemplate'
-import { useAuth } from '../../contexts/AuthContext'
+import { LocalDataClass } from '../../data-class/LocalDataClass'
+import { useCustomGetQuery } from '@query/useCustomQuery'
+import { API_URLS } from '@constants/API_URLS'
+import { useCustomPatchMutation } from '@query/useCustomMutation'
+import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
+import { PiTextColumns } from 'react-icons/pi'
+import classes from './ExerciseTable.module.css'
 
+import cx from 'clsx'
 const ExerciseTables: React.FC = () => {
-  const [exercises, setExercises] = useState<IExerciseTableResponse>()
-  const theme = useMantineTheme()
-  const [searchName, setSearchName] = useState(undefined)
-  const [isLoading, setIsLoading] = useState(true)
-  const [rowCount, setRowCount] = useState(0)
-  const getPagingExercise = useGetPagingExercise()
-  const getPagingExerciseForGuest = useGetPagingExerciseForGuest()
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [pagination, setPagination] = useState<MRT_PaginationState>({
-    pageIndex: 0,
-    pageSize: 20,
-  })
-  const userStr = getCurrentUser()
+  const [searchName, setSearchName] = useState('')
+  const [pageIndex, setPageIndex] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const currentUser = LocalDataClass.user
 
-  useEffect(() => {
-    if (searchName) {
-      pagination.pageIndex = 0
-    }
-    const dataToSend: IExercisePagePayload = {
-      pageIndex: pagination.pageIndex,
-      pageSize: pagination.pageSize,
+  const urlExercise =
+    currentUser?.authStatus === 'SUCCESS'
+      ? API_URLS.GET_EXERCISES
+      : API_URLS.GET_EXERCISES_GUEST
+
+  const {
+    data: exerciseTable,
+    isFetching: isExerciseTableFetching,
+    refetch,
+  } = useCustomGetQuery<ExercisePagePayload, ExerciseTableResponse>(
+    urlExercise,
+    {
+      pageIndex: pageIndex - 1,
+      pageSize: pageSize,
       searchName: searchName,
     }
-    setIsLoading(true)
-
-    if (userStr) {
-      // Trigger the mutation on page load
-      getPagingExercise.mutate(dataToSend, {
-        onSuccess(data) {
-          setIsLoading(false)
-          setExercises(data.data.result)
-          setRowCount(data.data.result.totalRowCount)
-        },
-      })
-    } else {
-      getPagingExerciseForGuest.mutate(dataToSend, {
-        onSuccess(data) {
-          setIsLoading(false)
-          setExercises(data.data.result)
-          setRowCount(data.data.result.totalRowCount)
-        },
-      })
-    }
-  }, [pagination, searchName])
-
-  //Display successful notification after a successful login
-  useEffect(() => {
-    if (location?.state?.showSuccessNotification) {
-      notifications.show({
-        title: 'Successful',
-        message: 'Login success',
-        color: 'green',
-        radius: theme.radius.md,
-        styles: (theme) => ({
-          root: {
-            fontWeight: 600,
-            fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-          },
-          title: {
-            color: theme.colors.green[6],
-            fontWeight: 600,
-            fontFamily: `Greycliff CF, ${theme.fontFamily}`,
-          },
-        }),
-        sx: { backgroundColor: theme.black, color: 'green' },
-      })
-      navigate('.', { replace: true, state: {} })
-    }
-  }, [location.state, navigate])
-  // const table = useMantineReactTable({
-  //   columns,
-  //   data, //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
-  //   enableColumnFilterModes: true,
-  //   enableColumnOrdering: true,
-  //   enableFacetedValues: true,
-  //   enableGrouping: true,
-  //   enablePinning: true,
-  //   enableRowActions: true,
-  //   enableRowSelection: true,
-  //   initialState: { showColumnFilters: true, showGlobalFilter: true },
-  //   paginationDisplayMode: 'pages',
-  //   positionToolbarAlertBanner: 'bottom',
-  //   mantinePaginationProps: {
-  //     radius: 'xl',
-  //     size: 'lg',
-  //   },
-  //   mantineSearchTextInputProps: {
-  //     placeholder: 'Search Employees',
-  //   },
-  //   renderDetailPanel: ({ row }) => (
-  //     <Box
-  //       sx={{
-  //         display: 'flex',
-  //         justifyContent: 'flex-start',
-  //         alignItems: 'center',
-  //         gap: '16px',
-  //         padding: '16px',
-  //       }}
-  //     >
-  //       <img
-  //         alt='avatar'
-  //         height={200}
-  //         src={row.original.avatar}
-  //         style={{ borderRadius: '50%' }}
-  //       />
-  //       <Box sx={{ textAlign: 'center' }}>
-  //         <Title>Signature Catch Phrase:</Title>
-  //         <Text>&quot;{row.original.signatureCatchPhrase}&quot;</Text>
-  //       </Box>
-  //     </Box>
-  //   ),
-  //   renderRowActionMenuItems: () => (
-  //     <>
-  //       <Menu.Item icon={<IconUserCircle />}>View Profile</Menu.Item>
-  //       <Menu.Item icon={<IconSend />}>Send Email</Menu.Item>
-  //     </>
-  //   ),
-  //   renderTopToolbar: ({ table }) => {
-  //     const handleDeactivate = () => {
-  //       table.getSelectedRowModel().flatRows.map((row) => {
-  //         alert('deactivating ' + row.getValue('name'))
-  //       })
-  //     }
-
-  //     const handleActivate = () => {
-  //       table.getSelectedRowModel().flatRows.map((row) => {
-  //         alert('activating ' + row.getValue('name'))
-  //       })
-  //     }
-
-  //     const handleContact = () => {
-  //       table.getSelectedRowModel().flatRows.map((row) => {
-  //         alert('contact ' + row.getValue('name'))
-  //       })
-  //     }
-
-  //     return (
-  //       <Flex p='md' justify='space-between'>
-  //         <Flex gap='xs'>
-  //           {/* import MRT sub-components */}
-  //           <MRT_GlobalFilterTextInput table={table} />
-  //           <MRT_ToggleFiltersButton table={table} />
-  //         </Flex>
-  //         <Flex sx={{ gap: '8px' }}>
-  //           <Button
-  //             color='red'
-  //             disabled={!table.getIsSomeRowsSelected()}
-  //             onClick={handleDeactivate}
-  //             variant='filled'
-  //           >
-  //             Deactivate
-  //           </Button>
-  //           <Button
-  //             color='green'
-  //             disabled={!table.getIsSomeRowsSelected()}
-  //             onClick={handleActivate}
-  //             variant='filled'
-  //           >
-  //             Activate
-  //           </Button>
-  //           <Button
-  //             color='blue'
-  //             disabled={!table.getIsSomeRowsSelected()}
-  //             onClick={handleContact}
-  //             variant='filled'
-  //           >
-  //             Contact
-  //           </Button>
-  //         </Flex>
-  //       </Flex>
-  //     )
-  //   },
-  // })
-
-  const columnSetup = exercises?.columns.map((column) => {
-    let result: MRT_ColumnDef<IExerciseRowResponse> = {
-      accessorKey: column.code,
-      header: column.name,
-    }
-    if (column.type === 'multiSelect') {
-      result = {
-        ...result,
-        accessorFn: (row: IExerciseRowResponse) => (
-          <List>
-            {(row[column.code] as string[])?.map((name, index) => (
-              <List.Item key={index}>{name}</List.Item>
-            ))}
-          </List>
-        ),
-      }
-    }
-    return result
-  })
-
-  const renderTopToolbarCustomAction = userStr
-    ? ({}) => (
-        <Flex p='md' justify='space-between'>
-          <Flex sx={{ gap: '8px' }}>
-            <Button variant='filled' color='green'>
-              Create New User
-            </Button>
-          </Flex>
-        </Flex>
-      )
-    : undefined
-
-  const columns = useMemo<MRT_ColumnDef<IExerciseRowResponse>[]>(
-    () => columnSetup || [],
-    [exercises?.columns]
   )
+
   const table = useMantineReactTable({
-    columns,
-    data: exercises?.rows ?? [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
-    // enableColumnFilterModes: true,
-    // columnFilterModeOptions: ['contains', 'startsWith', 'endsWith'],
+    columns: [],
+    data: exerciseTable?.data.result.rows || [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
     onGlobalFilterChange: setSearchName,
-    onPaginationChange: setPagination,
-    mantineTableContainerProps: { sx: { maxHeight: '650px' } },
-    defaultColumn: {
-      maxSize: 400,
-      size: 220, //default size is usually 180
-      mantineTableBodyCellProps: {
-        align: 'center',
-      },
-      mantineTableHeadCellProps: {
-        align: 'center',
-      },
-    },
-    // autoResetPageIndex: areRowsChanged,
-    initialState: {
-      columnPinning: {
-        // left: ['name'],
-        left: ['name'],
-      },
-      isLoading: isLoading,
-    },
-    // positionPagination: 'top',
     manualFiltering: true,
-    manualPagination: true,
     manualSorting: true,
-    rowCount: rowCount,
-    enableStickyHeader: true,
-    enableColumnResizing: true,
-    enableColumnPinning: true,
-    // enableBottomToolbar: false,
-    editDisplayMode: 'row',
+    initialState: {
+      showGlobalFilter: true,
+    },
+    enableGlobalFilter: true,
     mantineTableProps: {
       withColumnBorders: true,
     },
-    renderTopToolbarCustomActions: renderTopToolbarCustomAction,
     state: {
-      isLoading: isLoading,
-      pagination,
       globalFilter: searchName,
-      // showAlertBanner: isError,
-      showLoadingOverlay: isLoading, //fetching next page pagination
-      showSkeletons: isLoading, //loading for the first time with no data
-      showProgressBars: isLoading,
     },
-    mantineProgressProps: ({ isTopToolbar }) => ({
-      color: 'orange',
-      variant: 'determinate', //if you want to show exact progress value
-      style: {
-        display: isTopToolbar ? 'block' : 'none', //hide bottom progress bar
-      },
-    }),
   })
+
+  const updateExerciseColumnVisibility =
+    useCustomPatchMutation<ExerciseColumnVisibilityPayload>(
+      API_URLS.UPDATE_DISPLAY_EXERCISE_SETTING_BY_ID,
+      LocalDataClass.user.accountId,
+      {
+        onSuccess() {
+          refetch()
+        },
+      }
+    )
+
+  const changeColumnVisibility = (event: any, column: any) => {
+    const updatePayload = {
+      [column.code]: event.currentTarget.checked,
+    }
+    updateExerciseColumnVisibility.mutateAsync(updatePayload)
+  }
+
+  const [scrolled, setScrolled] = useState(false)
+
+  // Sample total data count (replace with your data)
+  const totalItems = exerciseTable?.data.result.totalRowCount as number
+  const totalPages = Math.ceil(totalItems / pageSize) // Calculate total pages
+  const startItemIndex = (pageIndex - 1) * pageSize + 1
+  const endItemIndex = Math.min(pageIndex * pageSize, totalItems)
+
+  // Handler to update page size
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(Number(value))
+    setPageIndex(1) // Reset to page 1 when page size changes
+  }
+
+  const paginationValues = [
+    { value: '20', label: '20' },
+    { value: '30', label: '30' },
+    { value: '50', label: '50' },
+    { value: '100', label: '100' },
+  ]
 
   return (
     <CommonTemplate>
-      <MantineReactTable table={table} />
+      {/* <MantineReactTable table={table} /> */}
+      <Stack>
+        <Divider />
+        <Title
+          order={4}
+          variant='gradient'
+          gradient={{ from: 'teal', to: 'lime', deg: 15 }}
+        >
+          Exercise Table
+        </Title>
+
+        <Flex justify='space-between' align='center'>
+          <Group>
+            <Group align='center'>
+              <Pagination
+                total={totalPages} // Total number of pages
+                value={pageIndex} // Current page index
+                onChange={setPageIndex} // Handler for page change
+                withEdges
+                styles={(theme) => ({
+                  control: {
+                    '&[data-active]': {
+                      backgroundImage: theme.fn.gradient({
+                        from: 'teal',
+                        to: 'lime',
+                        deg: 105,
+                      }),
+                      border: 0,
+                    },
+                  },
+                })}
+              />
+              <Select
+                value={pageSize.toString()}
+                onChange={handlePageSizeChange}
+                data={paginationValues}
+                sx={{ maxWidth: '70px' }}
+              />
+              {startItemIndex && endItemIndex && totalItems && (
+                <Text>
+                  {startItemIndex}-{endItemIndex} of {totalItems}
+                </Text>
+              )}
+            </Group>
+
+            <MRT_GlobalFilterTextInput table={table} />
+
+            {currentUser.authStatus === 'SUCCESS' && (
+              <Menu shadow='md' width={200}>
+                <Menu.Target>
+                  <Tooltip label='Show/Hide columns'>
+                    <ActionIcon variant='transparent'>
+                      <PiTextColumns size={24} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  {exerciseTable?.data.result.columns?.map(
+                    (column: ExerciseColumnResponse, index) => {
+                      return (
+                        <Switch
+                          label={column.name}
+                          key={column.code}
+                          checked={column.visible}
+                          disabled={index === 0}
+                          onChange={(event) =>
+                            changeColumnVisibility(event, column)
+                          }
+                        />
+                      )
+                    }
+                  )}
+                </Menu.Dropdown>
+              </Menu>
+            )}
+          </Group>
+          {currentUser?.authStatus === 'SUCCESS' && (
+            <Flex p='md' justify='space-between'>
+              <Flex sx={{ gap: '8px' }}>
+                <Button
+                  variant='gradient'
+                  gradient={{ from: 'teal', to: 'lime', deg: 105 }}
+                  uppercase
+                >
+                  Create New User
+                </Button>
+              </Flex>
+            </Flex>
+          )}
+        </Flex>
+
+        <ScrollArea
+          h={550}
+          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
+        >
+          {/* Using Vanilla Mantine Table component here */}
+          <LoadingOverlay visible={isExerciseTableFetching} />
+          <Skeleton visible={isExerciseTableFetching}>
+            <Table
+              captionSide='top'
+              fontSize='md'
+              highlightOnHover
+              horizontalSpacing='xl'
+              striped
+              verticalSpacing='xs'
+              withBorder
+              withColumnBorders
+              m='0'
+            >
+              {/* Use your own markup, customize however you want using the power of TanStack Table */}
+              <thead
+                className={cx(classes.header, { [classes.scrolled]: scrolled })}
+              >
+                <tr>
+                  {exerciseTable?.data.result.columns.map(
+                    (column: ExerciseColumnResponse) =>
+                      column.visible && (
+                        <th style={{ color: 'black' }} key={column.code}>
+                          {column.name}
+                        </th>
+                      )
+                  )}
+                </tr>
+              </thead>
+
+              <tbody>
+                {exerciseTable?.data.result.rows.map(
+                  (row: ExerciseRowResponse) => (
+                    <tr key={row.id}>
+                      {/* Map over columns again to display values for each row */}
+                      {exerciseTable?.data.result.columns.map(
+                        (column: ExerciseColumnResponse) =>
+                          column.visible && (
+                            <td key={column.id}>
+                              {/* Check if the field is an array or a simple value */}
+                              {Array.isArray(row[column.code]) ? (
+                                <List>
+                                  {(row[column.code] as string[]).map((key) => (
+                                    <List.Item key={key as string}>
+                                      <Highlight
+                                        highlight={searchName ? searchName : ''}
+                                        highlightStyles={(theme) => ({
+                                          backgroundColor: theme.colors.teal[4],
+                                        })}
+                                      >
+                                        {key}
+                                      </Highlight>
+                                    </List.Item>
+                                  ))}
+                                </List>
+                              ) : (
+                                <Highlight
+                                  highlight={searchName ? searchName : ''}
+                                  highlightStyles={(theme) => ({
+                                    backgroundColor: theme.colors.teal[4],
+                                  })}
+                                >
+                                  {(row[column.code] as string) ?? ''}
+                                </Highlight>
+                              )}
+                            </td>
+                          )
+                      )}
+                    </tr>
+                  )
+                )}
+              </tbody>
+            </Table>
+          </Skeleton>
+
+          <MRT_ToolbarAlertBanner stackAlertBanner table={table} />
+        </ScrollArea>
+      </Stack>
     </CommonTemplate>
   )
 }

@@ -1,12 +1,13 @@
-interface IExerciseColumnResponse {
+interface ExerciseColumnResponse {
+  [exerciseColumn: string]: string | boolean | undefined | number
   id: number
   code: string
   name: string
   type: string
-  isVisible: boolean
+  visible: boolean
 }
 
-interface IExerciseRowResponse {
+interface ExerciseRowResponse {
   [exerciseColumn: string]: string | boolean | string[] | undefined
   id: string
   name: string
@@ -23,10 +24,9 @@ interface IExerciseRowResponse {
   muscleGroup?: string[]
 }
 
-interface IExerciseTableResponse {
-  columns: IExerciseColumnResponse[]
-  rows: IExerciseRowResponse[]
-  primaryColumnId: number
+interface ExerciseTableResponse {
+  columns: ExerciseColumnResponse[]
+  rows: ExerciseRowResponse[]
   totalRowCount: number
 }
 
@@ -36,16 +36,16 @@ interface ApiResponse<T> {
   message: string
   result: T
 }
-interface IExercisePagePayload {
-  pageIndex: number // Example pagination data
-  pageSize: number // Example pagination data
+interface ExercisePagePayload {
+  pageIndex: number
+  pageSize: number
   searchName?: string
 }
 
 export type {
-  IExercisePagePayload,
+  ExercisePagePayload,
   ApiResponse,
-  IExerciseColumnResponse,
-  IExerciseRowResponse,
-  IExerciseTableResponse,
+  ExerciseColumnResponse,
+  ExerciseRowResponse,
+  ExerciseTableResponse,
 }

@@ -1,45 +1,45 @@
-import { useContext, createContext, ReactNode, useState } from 'react'
-import { login, logout } from '../services/auth-service'
-import { MantineTheme, useMantineTheme } from '@mantine/core'
-import { notifications } from '@mantine/notifications'
-import ILoginResponse from '../types/LoginResponse'
-import { ApiResponse } from '../types/ExerciseTableResponse'
+import { createContext, ReactNode } from 'react'
+import { LocalAccount, LocalDataClass } from '../data-class/LocalDataClass'
 
 // Define the shape of the Auth context
 interface AuthContextType {
-  token: any
-  logOut: () => void
+  user: LocalAccount
+  logout: () => void
+  backToLogin: () => void
 }
 
 interface AuthProviderProps {
   children: ReactNode
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const theme = useMantineTheme()
-  const [token, setToken] = useState('')
+  const user = LocalDataClass.user
 
-  const logOut = () => {
-    
+  const logout = () => {
+    try {
+      LocalDataClass.user = {
+        ...user,
+        profileToken: '',
+        refreshToken: '',
+        authStatus: 'LOGOUT',
+      }
+      return
+    } catch (err: any) {
+      console.log(err)
+    }
   }
 
+  const backToLogin = () => {
+    LocalDataClass.user = {
+      ...user,
+      authStatus: 'LOGIN',
+    }
+  }
   return (
-    <AuthContext.Provider value={{ token, logOut }}>
+    <AuthContext.Provider value={{ user, logout, backToLogin }}>
       {children}
     </AuthContext.Provider>
   )
 }
-
-export const useAuth = () => {
-  return useContext(AuthContext)
-}
-
-// const PrivateRoute = () => {
-//   const auth = useAuth()
-//   if (!auth?.token) return <Navigate to='/login' />
-//   return <Outlet />
-// }
-
-// export default PrivateRoute

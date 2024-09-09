@@ -1,5 +1,6 @@
 import {
   Group,
+  NavLink,
   Navbar,
   Text,
   UnstyledButton,
@@ -7,29 +8,21 @@ import {
 } from '@mantine/core'
 import MainLinks from './MainLinks'
 import * as AuthService from '../services/auth-service'
-import { useAuth } from '../contexts/AuthContext'
-
-const setting = createStyles((theme) => ({
-  button: {
-    display: 'block',
-    width: '100%',
-    padding: theme.spacing.xs,
-    borderRadius: theme.radius.sm,
-    color: theme.colorScheme === 'dark' ? theme.colors.dark[0] : theme.black,
-
-    '&:hover': {
-      backgroundColor:
-        theme.colorScheme === 'dark'
-          ? theme.colors.dark[6]
-          : theme.colors.gray[0],
-    },
-  },
-}))
+import { useContext } from 'react'
+import { AuthContext } from '../contexts/AuthContext'
+import { LocalDataClass } from '../data-class/LocalDataClass'
+import { useCustomPostMutation } from '@query/useCustomMutation'
+import { API_URLS } from '@constants/API_URLS'
+import { use } from 'i18next'
+import { NavigateFunction, useNavigate } from 'react-router-dom'
+import { NotificationContext } from '@contexts/NotificationContext'
+import { LuLogOut } from 'react-icons/lu'
 
 export function CommonNavBar() {
-  const { classes } = setting()
-  const userStr = AuthService.getCurrentUser()
-
+  const { addMessage } = useContext(NotificationContext)!
+  const navigate: NavigateFunction = useNavigate()
+  const auth = useContext(AuthContext)
+  const user = LocalDataClass.user
   const widthStyles = {
     lg: 200,
     sm: 200,
@@ -38,28 +31,41 @@ export function CommonNavBar() {
     xs: 200,
   }
 
+  const logout = useCustomPostMutation<string>(API_URLS.ACCOUNT_LOGOUT, {
+    onSuccess(result) {
+      if (result.data.status === 'OK') {
+        auth?.logout()
+        navigate('/logout', {
+          replace: true,
+          state: {},
+        })
+        addMessage('Successful', result.data.message)
+      }
+    },
+  })
+
+  const handleLogout = () => {
+    logout.mutateAsync(user.profileToken)
+  }
+
   const displayLogout = () => {
-    if (userStr) {
+    if (user.profileToken) {
       return (
         <Navbar.Section>
-          <UnstyledButton className={classes.button}>
-            <Group position='center'>
-              <Text
-                color='red'
-                size='sm'
-                fw={700}
-                component='a'
-                onClick={() => AuthService.logout(userStr.profileToken)}
-              >
-                Log out
-              </Text>
-            </Group>
-          </UnstyledButton>
+          <NavLink
+            label='Log out'
+            fw={700}
+            style={{ color: 'red' }}
+            component='a'
+            onClick={handleLogout}
+            icon={<LuLogOut />}
+          ></NavLink>
         </Navbar.Section>
       )
     }
     return undefined
   }
+
   return (
     <Navbar width={widthStyles} p='xs'>
       <Navbar.Section grow mt='md'>

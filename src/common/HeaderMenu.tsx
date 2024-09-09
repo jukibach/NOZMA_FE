@@ -8,11 +8,8 @@ import {
   Text,
   createStyles,
 } from '@mantine/core'
-import ILoginResponse from '../types/LoginResponse'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { debug } from 'console'
-import { getCurrentUser } from '../services/auth-service'
+import { LocalDataClass } from '../data-class/LocalDataClass'
 
 const useStyles = createStyles((theme) => ({
   navbar: {
@@ -27,7 +24,7 @@ interface Props {
 }
 export default function HeaderMenu({ opened, onClick }: Props) {
   const navigate: NavigateFunction = useNavigate()
-  const userStr = getCurrentUser()
+  const user = LocalDataClass.user
 
   const displayBurger = () => {
     return (
@@ -36,7 +33,7 @@ export default function HeaderMenu({ opened, onClick }: Props) {
           display: 'none', // current user
         }}
       >
-        <Burger opened={opened} onClick={onClick} mr='xl' />
+        <Burger opened={opened} onClick={onClick} mr='xl' color='white' />
       </MediaQuery>
     )
   }
@@ -46,11 +43,13 @@ export default function HeaderMenu({ opened, onClick }: Props) {
   }
 
   const displaySignInButton = () => {
-    if (!userStr) {
+    if (!user.profileToken) {
       return (
         <Button
           variant='gradient'
-          gradient={{ from: 'teal', to: 'lime', deg: 105 }}
+          style={{
+            backgroundColor: 'blue',
+          }}
           uppercase
           radius='lg'
           size='lg'
@@ -62,9 +61,6 @@ export default function HeaderMenu({ opened, onClick }: Props) {
       )
     }
   }
-  // if (auth?.token === undefined) {
-  //   return <div>Loading...</div> // Render a loading state if `currentUser` is not yet defined
-  // }
 
   return (
     <Header
@@ -72,7 +68,11 @@ export default function HeaderMenu({ opened, onClick }: Props) {
       p='md'
       withBorder={true}
       sx={(theme) => ({
-        backgroundColor: theme.fn.rgba(theme.colors.blue[3], 1),
+        backgroundImage: theme.fn.gradient({
+          from: 'teal',
+          to: 'lime',
+          deg: 15,
+        }),
         borderRadius: '4px',
         flexDirection: 'row',
         gap: '16px',
@@ -92,7 +92,9 @@ export default function HeaderMenu({ opened, onClick }: Props) {
       >
         <Group>
           {displayBurger()}
-          <Text fw={700}>NOMZA</Text>
+          <Text fw={600} color='white'>
+            NOZMA
+          </Text>
         </Group>
         {displaySignInButton()}
       </Flex>
