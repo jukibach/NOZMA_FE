@@ -23,11 +23,22 @@ export class LocalStorageClass {
 
   static setStorage<T>(name: LocalStorageName, value: T) {
     try {
-      const jsonData = CryptoJS.AES.encrypt( 
+      const jsonData = CryptoJS.AES.encrypt(
         JSON.stringify(value),
         'NOZMA_6969'
       ).toString()
       localStorage.setItem(name, jsonData)
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent(
+            'onChange' + name.charAt(0).toUpperCase() + name.slice(1),
+            {
+              bubbles: true,
+              detail: { value },
+            }
+          )
+        )
+      }, 0)
     } catch (error) {
       console.error(error)
       return value

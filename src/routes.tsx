@@ -9,6 +9,8 @@ import ExerciseTables from './pages/Exercises/ExerciseTable'
 import Register from './pages/Authentication/Register'
 import Logout from '@pages/Authentication/Logout'
 import { AuthGuard } from '@guards/AuthGuard'
+import SessionTimeout from '@pages/Authentication/SessionTimeout'
+import Maintenance from '@pages/Authentication/Maintenance'
 
 export const routers = createBrowserRouter([
   {
@@ -24,16 +26,20 @@ export const routers = createBrowserRouter([
     element: <Register />,
   },
   {
+    path: '/maintenance',
+    element: <Maintenance />,
+  },
+  {
     path: '/',
     element: <AuthGuard />,
     children: [
       {
-        path: '/',
-        element: <ExerciseTables />,
-      },
-      {
         path: '/logout',
         element: <Logout />,
+      },
+      {
+        path: '/session-timeout',
+        element: <SessionTimeout />,
       },
     ],
   },

@@ -23,17 +23,9 @@ function CommonTemplate({ children }: ContainerProps) {
               : theme.colors.gray[0],
         },
       }}
-      navbar={
-        opened ? (
-          <CommonNavBar
-          />
-        ) : undefined
-      }
+      navbar={opened ? <CommonNavBar /> : undefined}
       header={
-        <HeaderMenu
-          opened={opened}
-          onClick={() => setOpened((o) => !o)}
-        />
+        <HeaderMenu opened={opened} onClick={() => setOpened((o) => !o)} />
       }
     >
       {children}

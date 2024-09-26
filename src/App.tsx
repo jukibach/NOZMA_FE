@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import './App.css'
 import { Notifications } from '@mantine/notifications'
 import {
@@ -11,8 +11,6 @@ import { AuthProvider } from '@contexts/AuthContext'
 import { NotificationProvider } from '@contexts/NotificationContext'
 import { RouterProvider } from 'react-router-dom'
 import { routers } from 'routes'
-import { DefaultLocalAccount, LocalDataClass } from '@data-class/LocalDataClass'
-import { LocalStorageClass } from '@data-class/LocalStorageClass'
 function App() {
   const queryClient = new QueryClient()
   const [colorScheme, setColorScheme] = useState<ColorScheme>('light')

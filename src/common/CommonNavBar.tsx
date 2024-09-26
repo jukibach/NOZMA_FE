@@ -21,7 +21,7 @@ import { LuLogOut } from 'react-icons/lu'
 export function CommonNavBar() {
   const { addMessage } = useContext(NotificationContext)!
   const navigate: NavigateFunction = useNavigate()
-  const auth = useContext(AuthContext)
+  const { logout } = useContext(AuthContext)!
   const user = LocalDataClass.user
   const widthStyles = {
     lg: 200,
@@ -31,10 +31,10 @@ export function CommonNavBar() {
     xs: 200,
   }
 
-  const logout = useCustomPostMutation<string>(API_URLS.ACCOUNT_LOGOUT, {
+  const triggerLogout = useCustomPostMutation<string>(API_URLS.ACCOUNT_LOGOUT, {
     onSuccess(result) {
       if (result.data.status === 'OK') {
-        auth?.logout()
+        logout()
         navigate('/logout', {
           replace: true,
           state: {},
@@ -43,9 +43,8 @@ export function CommonNavBar() {
       }
     },
   })
-
   const handleLogout = () => {
-    logout.mutateAsync(user.profileToken)
+    triggerLogout.mutateAsync(user.profileToken)
   }
 
   const displayLogout = () => {

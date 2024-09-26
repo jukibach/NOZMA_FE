@@ -19,7 +19,6 @@ export const useCustomGetQuery = <TVariables = unknown, TData = unknown>(
   const memoizedParams = objectToQueryString(params)
   const finalUrl = `${url}?${memoizedParams}`
 
-  const navigate = useNavigate()
   return useQuery({
     ...options,
     refetchOnWindowFocus: false,
@@ -34,15 +33,6 @@ export const useCustomGetQuery = <TVariables = unknown, TData = unknown>(
             error.response.data.message) ||
           error.message ||
           error.toString()
-        if (error.response.data.code === 'E107') {
-          LocalDataClass.user = {
-            ...LocalDataClass.user,
-            profileToken: '',
-            refreshToken: '',
-            authStatus: 'LOGOUT',
-          }
-          return navigate('/logout', { replace: true })
-        }
         addMessage('Error', resMessage)
         return resMessage
       }

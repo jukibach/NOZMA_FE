@@ -9,6 +9,7 @@ import { AxiosResponse } from 'axios'
 import { useContext } from 'react'
 import { NotificationContext } from '../contexts/NotificationContext'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
+import { error } from 'console'
 
 export function useCustomPostMutation<
   TVariables = unknown,
@@ -80,8 +81,6 @@ export function useCustomPatchMutation<
             error.response.data.message) ||
           error.message ||
           error.toString()
-        if (error.response.data.code === 'E107') navigate('/logout')
-
         addMessage('Error', resMessage)
         return resMessage
       }

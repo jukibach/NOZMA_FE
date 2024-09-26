@@ -17,6 +17,7 @@ export interface LocalAccount {
   refreshToken: string
   role: string
   authStatus: AuthenticationStatus
+  isMaintained: boolean
 }
 
 export const DefaultLocalAccount: LocalAccount = {
@@ -27,6 +28,7 @@ export const DefaultLocalAccount: LocalAccount = {
   refreshToken: '',
   role: 'ROLE_USER',
   authStatus: 'LOGIN',
+  isMaintained: false,
 }
 
 export type Language = 'en' | 'fr'

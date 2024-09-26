@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import {
   ExerciseColumnResponse,
   ExercisePagePayload,
   ExerciseRowResponse,
   ExerciseTableResponse,
 } from '../../interfaces/ExerciseTableResponse'
+import { IoIosSearch } from 'react-icons/io'
 import {
   ActionIcon,
   Button,
@@ -12,6 +13,7 @@ import {
   Flex,
   Group,
   Highlight,
+  Input,
   List,
   LoadingOverlay,
   Menu,
@@ -38,19 +40,36 @@ import { API_URLS } from '@constants/API_URLS'
 import { useCustomPatchMutation } from '@query/useCustomMutation'
 import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
 import { PiTextColumns } from 'react-icons/pi'
+import { FaArrowDown, FaArrowUp } from 'react-icons/fa'
 import classes from './ExerciseTable.module.css'
-
 import cx from 'clsx'
+import useDebounce from 'hooks/useDebounce'
+import { AuthContext } from '@contexts/AuthContext'
+import { SortableTableHeader } from '@common/SortableTableHeader'
+
 const ExerciseTables: React.FC = () => {
   const [searchName, setSearchName] = useState('')
   const [pageIndex, setPageIndex] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const currentUser = LocalDataClass.user
+  const { user } = useContext(AuthContext)!
+  const [sortDirection, setSortDirection] = useState<string>()
 
   const urlExercise =
-    currentUser?.authStatus === 'SUCCESS'
+    user?.authStatus === 'SUCCESS'
       ? API_URLS.GET_EXERCISES
       : API_URLS.GET_EXERCISES_GUEST
+
+  const debouncedSearchName = useDebounce(searchName, 300)
+
+  useEffect(() => {
+    setPageIndex(1)
+  }, [searchName])
+
+  const exerciseTablePayload: ExercisePagePayload = {
+    pageIndex: pageIndex - 1,
+    pageSize: pageSize,
+    searchName: debouncedSearchName,
+  }
 
   const {
     data: exerciseTable,
@@ -58,35 +77,26 @@ const ExerciseTables: React.FC = () => {
     refetch,
   } = useCustomGetQuery<ExercisePagePayload, ExerciseTableResponse>(
     urlExercise,
-    {
-      pageIndex: pageIndex - 1,
-      pageSize: pageSize,
-      searchName: searchName,
-    }
+    exerciseTablePayload
   )
 
   const table = useMantineReactTable({
     columns: [],
     data: exerciseTable?.data.result.rows || [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
-    onGlobalFilterChange: setSearchName,
     manualFiltering: true,
     manualSorting: true,
     initialState: {
       showGlobalFilter: true,
     },
-    enableGlobalFilter: true,
     mantineTableProps: {
       withColumnBorders: true,
-    },
-    state: {
-      globalFilter: searchName,
     },
   })
 
   const updateExerciseColumnVisibility =
     useCustomPatchMutation<ExerciseColumnVisibilityPayload>(
       API_URLS.UPDATE_DISPLAY_EXERCISE_SETTING_BY_ID,
-      LocalDataClass.user.accountId,
+      user?.accountId,
       {
         onSuccess() {
           refetch()
@@ -100,8 +110,6 @@ const ExerciseTables: React.FC = () => {
     }
     updateExerciseColumnVisibility.mutateAsync(updatePayload)
   }
-
-  const [scrolled, setScrolled] = useState(false)
 
   // Sample total data count (replace with your data)
   const totalItems = exerciseTable?.data.result.totalRowCount as number
@@ -124,9 +132,7 @@ const ExerciseTables: React.FC = () => {
 
   return (
     <CommonTemplate>
-      {/* <MantineReactTable table={table} /> */}
       <Stack>
-        <Divider />
         <Title
           order={4}
           variant='gradient'
@@ -169,9 +175,23 @@ const ExerciseTables: React.FC = () => {
               )}
             </Group>
 
-            <MRT_GlobalFilterTextInput table={table} />
+            <Input
+              icon={<IoIosSearch />}
+              variant='filled'
+              placeholder='Search'
+              onChange={(event) => {
+                setSearchName(event.target.value)
+              }}
+              styles={(theme) => ({
+                input: {
+                  '&:focus-within': {
+                    borderColor: theme.colors.teal[7],
+                  },
+                },
+              })}
+            />
 
-            {currentUser.authStatus === 'SUCCESS' && (
+            {user?.authStatus === 'SUCCESS' && (
               <Menu shadow='md' width={200}>
                 <Menu.Target>
                   <Tooltip label='Show/Hide columns'>
@@ -192,6 +212,7 @@ const ExerciseTables: React.FC = () => {
                           onChange={(event) =>
                             changeColumnVisibility(event, column)
                           }
+                          color='teal'
                         />
                       )
                     }
@@ -200,7 +221,7 @@ const ExerciseTables: React.FC = () => {
               </Menu>
             )}
           </Group>
-          {currentUser?.authStatus === 'SUCCESS' && (
+          {user?.authStatus === 'SUCCESS' && (
             <Flex p='md' justify='space-between'>
               <Flex sx={{ gap: '8px' }}>
                 <Button
@@ -208,23 +229,20 @@ const ExerciseTables: React.FC = () => {
                   gradient={{ from: 'teal', to: 'lime', deg: 105 }}
                   uppercase
                 >
-                  Create New User
+                  Create Custom Exercise
                 </Button>
               </Flex>
             </Flex>
           )}
         </Flex>
 
-        <ScrollArea
-          h={550}
-          onScrollPositionChange={({ y }) => setScrolled(y !== 0)}
-        >
+        <ScrollArea h={550}>
           {/* Using Vanilla Mantine Table component here */}
           <LoadingOverlay visible={isExerciseTableFetching} />
           <Skeleton visible={isExerciseTableFetching}>
             <Table
               captionSide='top'
-              fontSize='md'
+              fontSize='sm'
               highlightOnHover
               horizontalSpacing='xl'
               striped
@@ -234,16 +252,15 @@ const ExerciseTables: React.FC = () => {
               m='0'
             >
               {/* Use your own markup, customize however you want using the power of TanStack Table */}
-              <thead
-                className={cx(classes.header, { [classes.scrolled]: scrolled })}
-              >
+              <thead className={cx(classes.header)}>
                 <tr>
                   {exerciseTable?.data.result.columns.map(
                     (column: ExerciseColumnResponse) =>
                       column.visible && (
-                        <th style={{ color: 'black' }} key={column.code}>
-                          {column.name}
-                        </th>
+                        <SortableTableHeader
+                          exerciseColumn={column}
+                          onChange={setSortDirection}
+                        />
                       )
                   )}
                 </tr>
@@ -257,14 +274,18 @@ const ExerciseTables: React.FC = () => {
                       {exerciseTable?.data.result.columns.map(
                         (column: ExerciseColumnResponse) =>
                           column.visible && (
-                            <td key={column.id}>
+                            <td key={column.code}>
                               {/* Check if the field is an array or a simple value */}
                               {Array.isArray(row[column.code]) ? (
                                 <List>
                                   {(row[column.code] as string[]).map((key) => (
                                     <List.Item key={key as string}>
                                       <Highlight
-                                        highlight={searchName ? searchName : ''}
+                                        highlight={
+                                          debouncedSearchName
+                                            ? debouncedSearchName
+                                            : ''
+                                        }
                                         highlightStyles={(theme) => ({
                                           backgroundColor: theme.colors.teal[4],
                                         })}
@@ -276,7 +297,11 @@ const ExerciseTables: React.FC = () => {
                                 </List>
                               ) : (
                                 <Highlight
-                                  highlight={searchName ? searchName : ''}
+                                  highlight={
+                                    debouncedSearchName
+                                      ? debouncedSearchName
+                                      : ''
+                                  }
                                   highlightStyles={(theme) => ({
                                     backgroundColor: theme.colors.teal[4],
                                   })}

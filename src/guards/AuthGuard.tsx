@@ -1,24 +1,36 @@
 import { AuthContext } from '@contexts/AuthContext'
 import { LocalDataClass } from '@data-class/LocalDataClass'
 import { useContext, useEffect } from 'react'
-import { Navigate, Outlet, replace, useNavigate } from 'react-router-dom'
+import {
+  Navigate,
+  Outlet,
+  replace,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom'
 
 export function AuthGuard() {
-  const user = LocalDataClass.user
+  // const user = LocalDataClass.user
   const navigate = useNavigate()
-  const auth = useContext(AuthContext)
-  debugger
-  // useEffect(() => {
-  if (user.authStatus === 'SUCCESS') return <Navigate to='/' replace={true} />
-  if (user.authStatus === 'LOGIN') return <Navigate to='/' replace={true} />
-  if (user.authStatus === 'SESSION_TIMEOUT') {
-    LocalDataClass.user = {
-      ...user,
-      authStatus: 'LOGIN',
+  const { user } = useContext(AuthContext)!
+  const { pathname, state } = useLocation()
+
+  useEffect(() => {
+    if (user?.isMaintained) {
+      navigate('/maintenance', { replace: true })
+      return
     }
-    return <Navigate to='/login' replace={true} />
-  }
-  // }, [user.authStatus])
+    if (user?.authStatus === 'SUCCESS') {
+      navigate('/', { replace: true, state })
+    }
+    if (user?.authStatus === 'LOGIN') navigate('/', { replace: true })
+    if (user?.authStatus === 'LOGOUT') {
+      navigate('/logout', { replace: true })
+    }
+    if (user?.authStatus === 'SESSION_TIMEOUT') {
+      navigate('/session-timeout', { replace: true })
+    }
+  }, [user?.authStatus, pathname, user?.isMaintained])
 
   return <Outlet />
 }

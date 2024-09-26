@@ -47,7 +47,7 @@ const Login: React.FC<Props> = () => {
     {
       isAlert: true,
       onSuccess(result) {
-        if (result.data.status === 'OK') {
+        if (result?.data.status === 'OK') {
           LocalDataClass.user = {
             ...(result.data.result as LocalAccount),
             authStatus: 'SUCCESS',

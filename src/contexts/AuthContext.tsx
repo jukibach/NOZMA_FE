@@ -1,5 +1,6 @@
 import { createContext, ReactNode } from 'react'
 import { LocalAccount, LocalDataClass } from '../data-class/LocalDataClass'
+import { useLocalStorage } from 'hooks/useLocalStorage'
 
 // Define the shape of the Auth context
 interface AuthContextType {
@@ -15,9 +16,9 @@ interface AuthProviderProps {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const user = LocalDataClass.user
+  const user = useLocalStorage<LocalAccount>('LOCAL_USER')
 
-  const logout = () => {
+  const logout = async () => {
     try {
       LocalDataClass.user = {
         ...user,
@@ -27,7 +28,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
       return
     } catch (err: any) {
-      console.log(err)
+      console.error(err)
     }
   }
 
