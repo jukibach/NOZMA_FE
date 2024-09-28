@@ -46,11 +46,9 @@ jobs:
     name: Deploy the FE application on EC2 using Docker
     if: |
       ${{ needs.build-and-push-images.result == 'success' }}
-    timeout-minutes: 30
+    timeout-minutes: 5
     runs-on: self-hosted
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
 
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -68,11 +66,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Setup SSH key
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > private_key.pem
-          chmod 600 private_key.pem
-
       - name: SSH and deploy Docker container
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -81,7 +74,6 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           IMAGE_TAG: latest
         run: |
-          ssh -i "private_key.pem" $EC2_USER@$EC2_HOST
           # Pull the latest image from ECR and run the container
           docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker stop $ECR_REPOSITORY || true
