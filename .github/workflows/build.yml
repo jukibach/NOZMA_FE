@@ -19,6 +19,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
 
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm # Cache npm modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }} # Unique key based on package-lock.json
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
       - name: Install dependencies
         run: |
           npm install --legacy-peer-deps
