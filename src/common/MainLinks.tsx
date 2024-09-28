@@ -27,7 +27,7 @@ const data = [
   },
   {
     color: 'teal',
-    label: 'Sign in',
+    label: 'Login',
     link: '/',
   },
 ]
