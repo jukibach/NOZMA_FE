@@ -12,7 +12,7 @@ permissions:
 
 jobs:
     build-and-push-images:
-        name: Build a JAR in spring boot using springboot and push it to ECR
+        name: Build a docker image and push it to ECR
         runs-on: ubuntu-latest
         steps:
             -   name: Checkout code
@@ -43,7 +43,7 @@ jobs:
 
     run-docker:
         needs: build-and-push-images
-        name: Deploy the BE application on EC2 using Docker
+        name: Deploy the FE application on EC2 using Docker
         if: |
             ${{ always() && needs.build-and-push-images.result == 'success' }}
         runs-on: self-hosted
