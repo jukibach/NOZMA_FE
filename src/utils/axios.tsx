@@ -50,9 +50,9 @@ import { addEvents, resetTimer, timeoutEventHandler } from './trackMovement'
 // }
 
 export const AppAxios = () => {
-  const axiosInstance = axios.create()
-
-  axiosInstance.defaults.baseURL = REACT_APP_BE_BASE_URL
+  const axiosInstance = axios.create({
+    baseURL: REACT_APP_BE_BASE_URL,
+  })
 
   const ignoredURLs = ['login', 'register', 'guest', 'reissue-token', 'logout']
   const runInterceptor = () => {
