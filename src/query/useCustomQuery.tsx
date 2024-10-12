@@ -1,21 +1,23 @@
-import { DefaultError, UseQueryOptions, useQuery } from '@tanstack/react-query'
+import { UseQueryOptions, useQuery } from '@tanstack/react-query'
 import { AppAxios } from '../utils/axios'
 import { ApiResponse } from '../interfaces/ExerciseTableResponse'
 import { AxiosResponse } from 'axios'
-import { useContext, useMemo } from 'react'
+import { useContext } from 'react'
 import { NotificationContext } from '../contexts/NotificationContext'
-import { useNavigate } from 'react-router-dom'
-import { LocalDataClass } from '@data-class/LocalDataClass'
 
 export const useCustomGetQuery = <TVariables = unknown, TData = unknown>(
   url: string,
   params?: TVariables,
-  options?: UseQueryOptions<
-    AxiosResponse<ApiResponse<TData>>,
-    AxiosResponse<ApiResponse<TData>>
+  options?: Omit<
+    UseQueryOptions<
+      AxiosResponse<ApiResponse<TData>>,
+      AxiosResponse<ApiResponse<TData>>
+    >,
+    'queryKey' | 'queryFn'
   >
 ) => {
   const { addMessage } = useContext(NotificationContext)!
+  debugger
   const memoizedParams = objectToQueryString(params)
   const finalUrl = `${url}?${memoizedParams}`
 

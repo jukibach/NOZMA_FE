@@ -9,7 +9,6 @@ import { IoIosSearch } from 'react-icons/io'
 import {
   ActionIcon,
   Button,
-  Divider,
   Flex,
   Group,
   Highlight,
@@ -28,19 +27,12 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import {
-  MRT_GlobalFilterTextInput,
-  MRT_ToolbarAlertBanner,
-  useMantineReactTable,
-} from 'mantine-react-table'
 import CommonTemplate from '../../common/CommonTemplate'
-import { LocalDataClass } from '../../data-class/LocalDataClass'
 import { useCustomGetQuery } from '@query/useCustomQuery'
 import { API_URLS } from '@constants/API_URLS'
 import { useCustomPatchMutation } from '@query/useCustomMutation'
 import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
 import { PiTextColumns } from 'react-icons/pi'
-import { FaArrowDown, FaArrowUp } from 'react-icons/fa'
 import classes from './ExerciseTable.module.css'
 import cx from 'clsx'
 import useDebounce from 'hooks/useDebounce'
@@ -79,19 +71,6 @@ const ExerciseTables: React.FC = () => {
     urlExercise,
     exerciseTablePayload
   )
-
-  const table = useMantineReactTable({
-    columns: [],
-    data: exerciseTable?.data.result.rows || [], //must be memoized or stable (useState, useMemo, defined outside of this component, etc.)
-    manualFiltering: true,
-    manualSorting: true,
-    initialState: {
-      showGlobalFilter: true,
-    },
-    mantineTableProps: {
-      withColumnBorders: true,
-    },
-  })
 
   const updateExerciseColumnVisibility =
     useCustomPatchMutation<ExerciseColumnVisibilityPayload>(
@@ -252,12 +231,13 @@ const ExerciseTables: React.FC = () => {
               m='0'
             >
               {/* Use your own markup, customize however you want using the power of TanStack Table */}
-              <thead className={cx(classes.header)}>
+              <thead className={classes.header}>
                 <tr>
                   {exerciseTable?.data.result.columns.map(
                     (column: ExerciseColumnResponse) =>
                       column.visible && (
                         <SortableTableHeader
+                          key={column.code}
                           exerciseColumn={column}
                           onChange={setSortDirection}
                         />
@@ -276,6 +256,7 @@ const ExerciseTables: React.FC = () => {
                           column.visible && (
                             <td key={column.code}>
                               {/* Check if the field is an array or a simple value */}
+
                               {Array.isArray(row[column.code]) ? (
                                 <List>
                                   {(row[column.code] as string[]).map((key) => (
@@ -319,7 +300,7 @@ const ExerciseTables: React.FC = () => {
             </Table>
           </Skeleton>
 
-          <MRT_ToolbarAlertBanner stackAlertBanner table={table} />
+          {/* <MRT_ToolbarAlertBanner stackAlertBanner table={table} /> */}
         </ScrollArea>
       </Stack>
     </CommonTemplate>

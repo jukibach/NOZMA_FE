@@ -17,7 +17,7 @@ export function SortableTableHeader({ exerciseColumn, onChange }: childProps) {
 
   return (
     <th
-      key={exerciseColumn.code}
+      key={exerciseColumn.id}
       onClick={handleSort}
       style={{
         textAlign: 'center',

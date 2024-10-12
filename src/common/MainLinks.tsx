@@ -1,14 +1,9 @@
-import {
-  Box,
-  Group,
-  NavLink,
-  Text,
-  UnstyledButton,
-  createStyles,
-} from '@mantine/core'
-import { ReactNode, useState } from 'react'
-import { NavigateFunction, useNavigate } from 'react-router-dom'
+import { Group, NavLink } from '@mantine/core'
+import { ReactNode, useContext, useState } from 'react'
+import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
 import { GiWeightLiftingUp } from 'react-icons/gi'
+import { MdAccountBox } from 'react-icons/md'
+import { AuthContext } from '@contexts/AuthContext'
 interface MainLinkProps {
   color: string
   label: string
@@ -27,8 +22,9 @@ const data = [
   },
   {
     color: 'teal',
-    label: 'Login',
-    link: '/',
+    label: 'Accounts',
+    link: '/accounts',
+    icon: <MdAccountBox size='1.2rem' />,
   },
 ]
 function MainLink({
@@ -46,7 +42,6 @@ function MainLink({
       <NavLink
         label={label}
         active={active}
-        // color={color}
         variant='filled'
         fw={600}
         p='xs'
@@ -75,14 +70,21 @@ function MainLink({
 
 export default function MainLinks() {
   const [active, setActive] = useState(0)
+  const { user } = useContext(AuthContext)!
+  let location = useLocation()
 
-  const links = data.map((link, index) => (
-    <MainLink
-      {...link}
-      active={index === active}
-      onClick={() => setActive(index)}
-      key={link.label}
-    ></MainLink>
-  ))
+  const links = data.map((link, index) => {
+    if (!user.profileToken && link.label === 'Accounts') {
+      return
+    }
+    return (
+      <MainLink
+        {...link}
+        active={location.pathname === link.link}
+        onClick={() => setActive(index)}
+        key={link.label}
+      ></MainLink>
+    )
+  })
   return <div>{links}</div>
 }

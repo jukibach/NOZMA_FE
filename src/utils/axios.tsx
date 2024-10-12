@@ -90,20 +90,16 @@ export const AppAxios = () => {
       },
       async (error) => {
         try {
-          debugger
-
           const data = await fetch(
             axiosInstance.defaults.baseURL + '/actuator/health'
           )
           if (!data?.ok) {
-            debugger
             const user = LocalDataClass.user
             user.isMaintained = true
             LocalDataClass.user = user
             routers.navigate('/maintenance')
           }
         } catch (error) {
-          debugger
           const user = LocalDataClass.user
           user.isMaintained = true
           LocalDataClass.user = user

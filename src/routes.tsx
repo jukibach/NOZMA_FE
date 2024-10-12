@@ -11,6 +11,7 @@ import Logout from '@pages/Authentication/Logout'
 import { AuthGuard } from '@guards/AuthGuard'
 import SessionTimeout from '@pages/Authentication/SessionTimeout'
 import Maintenance from '@pages/Authentication/Maintenance'
+import AccountManagementPage from '@pages/Account/AccountManagementPage'
 
 export const routers = createBrowserRouter([
   {
@@ -28,6 +29,10 @@ export const routers = createBrowserRouter([
   {
     path: '/maintenance',
     element: <Maintenance />,
+  },
+  {
+    path: '/accounts',
+    element: <AccountManagementPage />,
   },
   {
     path: '/',

@@ -1,19 +1,10 @@
-import {
-  Group,
-  NavLink,
-  Navbar,
-  Text,
-  UnstyledButton,
-  createStyles,
-} from '@mantine/core'
+import { NavLink, Navbar } from '@mantine/core'
 import MainLinks from './MainLinks'
-import * as AuthService from '../services/auth-service'
 import { useContext } from 'react'
 import { AuthContext } from '../contexts/AuthContext'
 import { LocalDataClass } from '../data-class/LocalDataClass'
 import { useCustomPostMutation } from '@query/useCustomMutation'
 import { API_URLS } from '@constants/API_URLS'
-import { use } from 'i18next'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
 import { NotificationContext } from '@contexts/NotificationContext'
 import { LuLogOut } from 'react-icons/lu'
