@@ -5,50 +5,6 @@ import { API_URLS } from '@constants/API_URLS'
 import { routers } from 'routes'
 import { addEvents, resetTimer, timeoutEventHandler } from './trackMovement'
 
-// let timer: any = undefined
-// let sessionTimer: any = undefined
-
-// export const resetTimer = () => {
-//   clearTimeout(timer)
-//   clearTimeout(sessionTimer)
-// }
-
-// const events = ['load', 'mousemove', 'mousedown', 'click', 'scroll', 'keypress']
-
-// function resetWhenUserIsActive() {
-//   setTimeout(() => {
-//     // clears any pending timer.
-//     // Listener clean up. Removes the existing event listener from the window
-//     Object.values(events).forEach((item) => {
-//       console.log('XXXXXXXXXXXXXXX', item)
-
-//       window.removeEventListener(item, resetTimer)
-//     })
-//     // logs out user
-//     resetTimer()
-
-//     LocalDataClass.user.authStatus === 'SUCCESS' && timeoutEventHandler()
-//   }, 1000) // 10000ms = 10secs. You can change the time.
-// }
-
-// export const timeoutEventHandler = () => {
-//   const user = LocalDataClass.user
-//   const profileToken = user.profileToken
-//   axios
-//     .post(REACT_APP_BE_BASE_URL + API_URLS.ACCOUNT_LOGOUT, profileToken, {
-//       headers: { 'Content-Type': 'text/plain' },
-//     })
-//     .then(() => {
-//       LocalDataClass.user = {
-//         ...user,
-//         profileToken: '',
-//         refreshToken: '',
-//         authStatus: 'SESSION_TIMEOUT',
-//       }
-//       routers.navigate('/session-timeout')
-//     })
-// }
-
 export const AppAxios = () => {
   const axiosInstance = axios.create({
     baseURL: REACT_APP_BE_BASE_URL,

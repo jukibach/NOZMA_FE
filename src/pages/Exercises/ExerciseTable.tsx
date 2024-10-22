@@ -34,10 +34,16 @@ import { useCustomPatchMutation } from '@query/useCustomMutation'
 import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
 import { PiTextColumns } from 'react-icons/pi'
 import classes from './ExerciseTable.module.css'
-import cx from 'clsx'
 import useDebounce from 'hooks/useDebounce'
 import { AuthContext } from '@contexts/AuthContext'
 import { SortableTableHeader } from '@common/SortableTableHeader'
+
+const paginationValues = [
+  { value: '20', label: '20' },
+  { value: '30', label: '30' },
+  { value: '50', label: '50' },
+  { value: '100', label: '100' },
+]
 
 const ExerciseTables: React.FC = () => {
   const [searchName, setSearchName] = useState('')
@@ -101,13 +107,6 @@ const ExerciseTables: React.FC = () => {
     setPageSize(Number(value))
     setPageIndex(1) // Reset to page 1 when page size changes
   }
-
-  const paginationValues = [
-    { value: '20', label: '20' },
-    { value: '30', label: '30' },
-    { value: '50', label: '50' },
-    { value: '100', label: '100' },
-  ]
 
   return (
     <CommonTemplate>
@@ -216,7 +215,6 @@ const ExerciseTables: React.FC = () => {
         </Flex>
 
         <ScrollArea h={550}>
-          {/* Using Vanilla Mantine Table component here */}
           <LoadingOverlay visible={isExerciseTableFetching} />
           <Skeleton visible={isExerciseTableFetching}>
             <Table
@@ -230,7 +228,6 @@ const ExerciseTables: React.FC = () => {
               withColumnBorders
               m='0'
             >
-              {/* Use your own markup, customize however you want using the power of TanStack Table */}
               <thead className={classes.header}>
                 <tr>
                   {exerciseTable?.data.result.columns.map(
@@ -251,6 +248,7 @@ const ExerciseTables: React.FC = () => {
                   (row: ExerciseRowResponse) => (
                     <tr key={row.id}>
                       {/* Map over columns again to display values for each row */}
+
                       {exerciseTable?.data.result.columns.map(
                         (column: ExerciseColumnResponse) =>
                           column.visible && (

@@ -127,9 +127,7 @@ const AccountManagementPage: React.FC = () => {
               }}
               rightSection={
                 searchName && (
-                  <ActionIcon
-                    onClick={() => setSearchName('')}
-                  >
+                  <ActionIcon onClick={() => setSearchName('')}>
                     <MdClose size={16} />
                   </ActionIcon>
                 )

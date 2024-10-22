@@ -1,4 +1,5 @@
 import { API_URLS } from '@constants/API_URLS'
+import { AuthContext } from '@contexts/AuthContext'
 import { NotificationContext } from '@contexts/NotificationContext'
 import {
   AccountColumnResponse,
@@ -50,6 +51,7 @@ export function AccountDetail({
   const [opened, setOpened] = useState(false)
   const navigate: NavigateFunction = useNavigate()
   const { addMessage } = useContext(NotificationContext)!
+  const { user, logout } = useContext(AuthContext)!
 
   const {
     data: accountDetail,
@@ -73,14 +75,20 @@ export function AccountDetail({
     Number(accountId),
     {
       onSuccess(result) {
-        refetch()
-        accountListRefetch()
-
         if (result?.data.status === 'OK') {
-          navigate('/accounts', {
-            replace: true,
-          })
-          setOpened(false)
+          if (
+            user.accountId ===
+              Number(
+                (result?.data.result as AccountDetailResponse).accountId
+              ) &&
+            user.accountName !==
+              (result?.data.result as AccountDetailResponse).accountName
+          ) {
+            logout()
+            navigate('/')
+          } else {
+            accountListRefetch()
+          }
           addMessage('Successful', result.data.message)
         }
       },
