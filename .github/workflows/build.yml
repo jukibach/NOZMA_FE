@@ -9,14 +9,14 @@ permissions:
 
 jobs:
   run-docker:
-    name: Deploy the FE application on S3
+    name: Builds Docker Image
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkouts Code
         uses: actions/checkout@v2
 
-      - name: Cache Node.js modules
+      - name: Caches Node.js modules
         uses: actions/cache@v3
         with:
           path: ~/.npm # Cache npm modules
@@ -24,9 +24,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Install dependencies
-        run: |
-          npm install --legacy-peer-deps
-          npm run build  # If you're using a static site generator like Vite, Jekyll, or Gatsby
-        env:
-          VITE_BE_BASE_URL: ${{ secrets.VITE_BE_BASE_URL }}
+      - name: Logins to docker registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
+
+      - name: Builds and pushes docker image to registry
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          push: true
+          tags: jukibach/nozma-fe:latest
