@@ -87,3 +87,39 @@ export function useCustomPatchMutation<
     },
   })
 }
+
+export function useCustomPutMutation<
+  TVariables = unknown,
+  TData = unknown,
+  TError = DefaultError
+>(
+  url: string,
+  id: number,
+  options?: UseMutationOptions<
+    AxiosResponse<ApiResponse<TData>>,
+    TError,
+    TVariables
+  > & { isAlert?: boolean }
+) {
+  const { addMessage } = useContext(NotificationContext)!
+  const isAlert = options?.isAlert
+  const URL = `${url}/${id}`
+  const navigate: NavigateFunction = useNavigate()
+  return useMutation({
+    ...options,
+    mutationFn: async (payload: TVariables) => {
+      try {
+        return await AppAxios().put<ApiResponse<TData>>(URL, payload)
+      } catch (error: any) {
+        const resMessage =
+          (error.response &&
+            error.response.data &&
+            error.response.data.message) ||
+          error.message ||
+          error.toString()
+        addMessage('Error', resMessage)
+        return resMessage
+      }
+    },
+  })
+}

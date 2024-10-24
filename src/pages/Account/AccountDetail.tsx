@@ -1,142 +1,31 @@
 import { API_URLS } from '@constants/API_URLS'
-import { AuthContext } from '@contexts/AuthContext'
-import { NotificationContext } from '@contexts/NotificationContext'
 import {
   AccountColumnResponse,
   AccountDetailResponse,
-  EditableAccountResponse,
-  UpdatableAccountPayload,
 } from '@interfaces/Account'
-import {
-  Button,
-  Group,
-  LoadingOverlay,
-  Modal,
-  TextInput,
-  useMantineTheme,
-} from '@mantine/core'
+import { Button, Group, Modal, TextInput, useMantineTheme } from '@mantine/core'
 import { DatePickerInput } from '@mantine/dates'
-import { useForm } from '@mantine/form'
-import { useCustomPatchMutation } from '@query/useCustomMutation'
 import { useCustomGetQuery } from '@query/useCustomQuery'
-import { useContext, useEffect, useState } from 'react'
-import { NavigateFunction, useNavigate } from 'react-router-dom'
+import { parseDateString } from '@utils/DateUtils'
+import { useState } from 'react'
 
 interface childProps {
   accountId: string
   columns: AccountColumnResponse[]
-  accountListRefetch: () => void
 }
 
-const editableInputs = ['accountName', 'email']
-
-const parseDateString = (dateString: string) => {
-  const [day, month, year] = dateString.split('/').map(Number)
-  return new Date(year, month - 1, day) // month is 0-indexed
-}
-
-// Helper function to convert Date object to dd/MM/yyyy string
-const formatDateToString = (date: Date) => {
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0') // month is 0-indexed
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
-}
-
-export function AccountDetail({
-  accountId,
-  columns,
-  accountListRefetch,
-}: childProps) {
+export function AccountDetail({ accountId, columns }: childProps) {
   const [opened, setOpened] = useState(false)
-  const navigate: NavigateFunction = useNavigate()
-  const { addMessage } = useContext(NotificationContext)!
-  const { user, logout } = useContext(AuthContext)!
 
-  const {
-    data: accountDetail,
-    isFetching: isFetching,
-    refetch,
-  } = useCustomGetQuery<EditableAccountResponse>(
-    `${API_URLS.ACCOUNT_LIST}/${accountId}`,
-    undefined,
-    {
-      enabled: false, // Disable automatic fetching on mount
-    }
+  const { data: accountDetail } = useCustomGetQuery<AccountDetailResponse>(
+    `${API_URLS.ACCOUNT_LIST}/${accountId}`
   )
 
-  const handleToggle = () => {
-    setOpened(true)
-    refetch()
-  }
-
-  const updateAccount = useCustomPatchMutation<UpdatableAccountPayload>(
-    API_URLS.ACCOUNT_LIST,
-    Number(accountId),
-    {
-      onSuccess(result) {
-        if (result?.data.status === 'OK') {
-          if (
-            user.accountId ===
-              Number(
-                (result?.data.result as AccountDetailResponse).accountId
-              ) &&
-            user.accountName !==
-              (result?.data.result as AccountDetailResponse).accountName
-          ) {
-            logout()
-            navigate('/')
-          } else {
-            accountListRefetch()
-          }
-          addMessage('Successful', result.data.message)
-        }
-      },
-    }
-  )
-
-  const form = useForm({
-    initialValues: {
-      accountName: '',
-      email: '',
-      firstName: '',
-      lastName: '',
-      birthdate: new Date(),
-    },
-  })
-
-  useEffect(() => {
-    if (accountDetail) {
-      form.setValues({
-        accountName: (accountDetail.data.result as EditableAccountResponse)
-          .accountName,
-        email: (accountDetail.data.result as EditableAccountResponse).email,
-        firstName: (accountDetail.data.result as EditableAccountResponse)
-          .firstName,
-        lastName: (accountDetail.data.result as EditableAccountResponse)
-          .lastName,
-        birthdate: parseDateString(
-          (accountDetail.data.result as EditableAccountResponse).birthdate
-        ),
-      })
-    }
-  }, [accountDetail])
-
-  type FormValues = typeof form.values
-
-  const handleSubmit = (values: FormValues) => {
-    const formattedValues = {
-      ...values,
-      birthdate: formatDateToString(values.birthdate), // Convert Date object to string
-    }
-
-    updateAccount.mutateAsync(formattedValues)
-  }
   const theme = useMantineTheme()
   return (
     <>
       <Button
-        onClick={() => handleToggle()}
+        onClick={() => setOpened(true)}
         variant='gradient'
         gradient={{
           from: 'teal',
@@ -146,6 +35,7 @@ export function AccountDetail({
       >
         Detail
       </Button>
+
       <Modal
         opened={opened}
         onClose={() => setOpened(false)}
@@ -160,7 +50,7 @@ export function AccountDetail({
         }}
       >
         {accountDetail && (
-          <form onSubmit={form.onSubmit((values) => handleSubmit(values))}>
+          <form>
             {columns.map((column: AccountColumnResponse) => {
               if (column.code === 'action') return
 
@@ -169,25 +59,23 @@ export function AccountDetail({
                   <div key={column.code}>
                     <TextInput
                       radius='md'
+                      readOnly
                       label='First name'
-                      {...form.getInputProps('firstName')}
+                      value={
+                        (accountDetail.data.result as AccountDetailResponse)
+                          .firstName
+                      }
                     />
                     <TextInput
                       radius='md'
+                      readOnly
                       label='Last name'
-                      {...form.getInputProps('lastName')}
+                      value={
+                        (accountDetail.data.result as AccountDetailResponse)
+                          .lastName
+                      }
                     />
                   </div>
-                )
-
-              if (editableInputs.some((url) => column.code === url))
-                return (
-                  <TextInput
-                    radius='md'
-                    key={column.code}
-                    label={column.name}
-                    {...form.getInputProps(column.code)}
-                  />
                 )
 
               if (column.code === 'birthdate')
@@ -195,9 +83,13 @@ export function AccountDetail({
                   <DatePickerInput
                     label={column.name}
                     key={column.code}
-                    {...form.getInputProps(column.code)}
+                    readOnly
                     mx='auto'
                     maw={400}
+                    value={parseDateString(
+                      (accountDetail.data.result as AccountDetailResponse)
+                        .birthdate
+                    )}
                   />
                 )
               return (
@@ -207,7 +99,7 @@ export function AccountDetail({
                   label={column.name}
                   readOnly
                   value={
-                    (accountDetail.data.result as EditableAccountResponse)[
+                    (accountDetail.data.result as AccountDetailResponse)[
                       column.code
                     ] as string
                   }
@@ -215,8 +107,13 @@ export function AccountDetail({
               )
             })}
             <Group position='center' mt='xl'>
-              <Button variant='outline' type='submit' mt='md'>
-                Update
+              <Button
+                variant='outline'
+                mt='md'
+                color='red'
+                onClick={() => setOpened(false)}
+              >
+                Cancel
               </Button>
             </Group>
           </form>

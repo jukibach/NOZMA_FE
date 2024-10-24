@@ -1,11 +1,7 @@
-import React, { useContext, useEffect, useState } from 'react'
-import {
-  ExerciseColumnResponse,
-  ExercisePagePayload,
-  ExerciseRowResponse,
-  ExerciseTableResponse,
-} from '../../interfaces/ExerciseTableResponse'
-import { IoIosSearch } from 'react-icons/io'
+import { SortableTableHeader } from '@common/SortableTableHeader'
+import { API_URLS } from '@constants/API_URLS'
+import { AuthContext } from '@contexts/AuthContext'
+import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
 import {
   ActionIcon,
   Button,
@@ -27,16 +23,21 @@ import {
   Title,
   Tooltip,
 } from '@mantine/core'
-import CommonTemplate from '../../common/CommonTemplate'
-import { useCustomGetQuery } from '@query/useCustomQuery'
-import { API_URLS } from '@constants/API_URLS'
 import { useCustomPatchMutation } from '@query/useCustomMutation'
-import { ExerciseColumnVisibilityPayload } from '@interfaces/ExerciseColumnVisibility'
-import { PiTextColumns } from 'react-icons/pi'
-import classes from './ExerciseTable.module.css'
+import { useCustomGetQuery } from '@query/useCustomQuery'
 import useDebounce from 'hooks/useDebounce'
-import { AuthContext } from '@contexts/AuthContext'
-import { SortableTableHeader } from '@common/SortableTableHeader'
+import React, { useContext, useEffect, useState } from 'react'
+import { IoIosSearch } from 'react-icons/io'
+import { MdClose } from 'react-icons/md'
+import { PiTextColumns } from 'react-icons/pi'
+import CommonTemplate from '../../common/CommonTemplate'
+import {
+  ExerciseColumnResponse,
+  ExercisePagePayload,
+  ExerciseRowResponse,
+  ExerciseTableResponse,
+} from '../../interfaces/ExerciseTableResponse'
+import classes from './ExerciseTable.module.css'
 
 const paginationValues = [
   { value: '20', label: '20' },
@@ -160,6 +161,13 @@ const ExerciseTables: React.FC = () => {
               onChange={(event) => {
                 setSearchName(event.target.value)
               }}
+              rightSection={
+                searchName && (
+                  <ActionIcon onClick={() => setSearchName('')}>
+                    <MdClose size={16} />
+                  </ActionIcon>
+                )
+              }
               styles={(theme) => ({
                 input: {
                   '&:focus-within': {

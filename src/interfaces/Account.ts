@@ -6,7 +6,7 @@ interface AccountColumnResponse {
   type: string
 }
 
-interface AccountDetailResponse {
+interface AccountViewResponse {
   [accountColumn: string]: string | boolean | string[] | undefined
   accountId: string
   accountName: string
@@ -16,7 +16,25 @@ interface AccountDetailResponse {
   creationTime: string
   lastModified: string
   status: string
-  isLocked: string
+}
+
+interface AccountDetailResponse {
+  [accountColumn: string]:
+    | string
+    | boolean
+    | string[]
+    | undefined
+    | AccountColumnResponse[]
+  accountId: string
+  accountName: string
+  email: string
+  firstName: string
+  lastName: string
+  birthdate: string
+  creationTime: string
+  lastModified: string
+  status: string
+  columns: AccountColumnResponse[]
 }
 
 interface EditableAccountResponse {
@@ -30,12 +48,13 @@ interface EditableAccountResponse {
   creationTime: string
   lastModified: string
   status: string
-  isLocked: string
+  profileToken: string
+  refreshToken: string
 }
 
 interface AccountTableResponse {
   columns: AccountColumnResponse[]
-  response: AccountDetailResponse[]
+  response: AccountViewResponse[]
   totalRecords: number
 }
 
@@ -45,7 +64,7 @@ interface AccountPagePayload {
   searchName?: string
 }
 
-interface UpdatableAccountPayload {
+interface EditableAccountPayload {
   [accountColumn: string]: string | boolean | string[] | undefined | Date
   accountName: string
   email: string
@@ -56,9 +75,10 @@ interface UpdatableAccountPayload {
 
 export type {
   AccountPagePayload,
-  UpdatableAccountPayload,
   AccountTableResponse,
-  AccountDetailResponse,
+  AccountViewResponse,
   AccountColumnResponse,
+  AccountDetailResponse,
+  EditableAccountPayload,
   EditableAccountResponse,
 }

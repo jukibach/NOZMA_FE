@@ -3,9 +3,6 @@ import { LocalStorageClass } from './LocalStorageClass'
 export type AuthenticationStatus =
   | 'LOGIN'
   | 'SUCCESS'
-  | 'MUST_CHANGE_PASSWORD'
-  | 'SHOULD_CHANGE_PASSWORD'
-  | 'FIRST_GENERATED_PASSWORD'
   | 'SESSION_TIMEOUT'
   | 'LOGOUT'
 

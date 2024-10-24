@@ -1,6 +1,6 @@
 import { NavLink, Navbar } from '@mantine/core'
 import MainLinks from './MainLinks'
-import { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { AuthContext } from '../contexts/AuthContext'
 import { LocalDataClass } from '../data-class/LocalDataClass'
 import { useCustomPostMutation } from '@query/useCustomMutation'
@@ -8,12 +8,14 @@ import { API_URLS } from '@constants/API_URLS'
 import { NavigateFunction, useNavigate } from 'react-router-dom'
 import { NotificationContext } from '@contexts/NotificationContext'
 import { LuLogOut } from 'react-icons/lu'
+import { EditProfile } from '@pages/Account/EditProfile'
 
 export function CommonNavBar() {
   const { addMessage } = useContext(NotificationContext)!
   const navigate: NavigateFunction = useNavigate()
-  const { logout } = useContext(AuthContext)!
-  const user = LocalDataClass.user
+  const { logout, user } = useContext(AuthContext)!
+  const [opened, setOpened] = useState(false)
+
   const widthStyles = {
     lg: 200,
     sm: 200,
@@ -34,6 +36,7 @@ export function CommonNavBar() {
       }
     },
   })
+
   const handleLogout = () => {
     triggerLogout.mutateAsync(user.profileToken)
   }
@@ -56,11 +59,22 @@ export function CommonNavBar() {
     return undefined
   }
 
+  const displayProfile = () => {
+    if (user.profileToken) {
+      return (
+        <EditProfile accountId={user.accountId}></EditProfile>
+      )
+    }
+    return undefined
+  }
+
   return (
     <Navbar width={widthStyles} p='xs'>
       <Navbar.Section grow mt='md'>
         <MainLinks />
       </Navbar.Section>
+      {displayProfile()}
+
       {displayLogout()}
     </Navbar>
   )

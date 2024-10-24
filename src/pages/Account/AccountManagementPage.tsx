@@ -3,7 +3,7 @@ import { API_URLS } from '@constants/API_URLS'
 import classes from './AccountManagementTable.module.css'
 import {
   AccountColumnResponse,
-  AccountDetailResponse,
+  AccountViewResponse,
   AccountPagePayload,
   AccountTableResponse,
 } from '@interfaces/Account'
@@ -53,14 +53,11 @@ const AccountManagementPage: React.FC = () => {
     setPageIndex(1)
   }, [searchName])
 
-  const {
-    data: accountManagementTable,
-    isFetching: isTableFetching,
-    refetch,
-  } = useCustomGetQuery<AccountPagePayload, AccountTableResponse>(
-    API_URLS.ACCOUNT_LIST,
-    accountTablePayload
-  )
+  const { data: accountManagementTable, isFetching: isTableFetching } =
+    useCustomGetQuery<AccountPagePayload, AccountTableResponse>(
+      API_URLS.ACCOUNT_LIST,
+      accountTablePayload
+    )
 
   const totalItems =
     (accountManagementTable?.data?.result.totalRecords as number) || 0
@@ -141,32 +138,7 @@ const AccountManagementPage: React.FC = () => {
                 },
               })}
             />
-
-            {/* {user?.authStatus === 'SUCCESS' && (
-              <Menu shadow='md' width={200}>
-                <Menu.Target>
-                  <Tooltip label='Show/Hide columns'>
-                    <ActionIcon variant='transparent'>
-                      <PiTextColumns size={24} />
-                    </ActionIcon>
-                  </Tooltip>
-                </Menu.Target>
-              </Menu>
-            )} */}
           </Group>
-          {/* {user?.authStatus === 'SUCCESS' && (
-            <Flex p='md' justify='space-between'>
-              <Flex sx={{ gap: '8px' }}>
-                <Button
-                  variant='gradient'
-                  gradient={{ from: 'teal', to: 'lime', deg: 105 }}
-                  uppercase
-                >
-                  Create a new account
-                </Button>
-              </Flex>
-            </Flex>
-          )} */}
         </Flex>
 
         <ScrollArea h={550}>
@@ -201,7 +173,7 @@ const AccountManagementPage: React.FC = () => {
               </thead>
               <tbody>
                 {accountManagementTable?.data?.result.response.map(
-                  (row: AccountDetailResponse) => (
+                  (row: AccountViewResponse) => (
                     <tr key={row.accountId}>
                       {accountManagementTable?.data?.result.columns.map(
                         (column: AccountColumnResponse) => {
@@ -213,7 +185,6 @@ const AccountManagementPage: React.FC = () => {
                                   columns={
                                     accountManagementTable?.data?.result.columns
                                   }
-                                  accountListRefetch={refetch}
                                 ></AccountDetail>
                               </td>
                             )
